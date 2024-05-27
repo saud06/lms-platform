@@ -14,11 +14,27 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return response()->json([
-        'Laravel' => app()->version(),
-        'message' => 'LMS Backend API is running',
-        'timestamp' => date('c')
-    ]);
+    try {
+        return response()->json([
+            'Laravel' => app()->version(),
+            'message' => 'LMS Backend API is running',
+            'timestamp' => now()->toIso8601String(),
+            'environment' => app()->environment(),
+            'debug' => config('app.debug'),
+            'database' => [
+                'connection' => config('database.default'),
+                'host' => config('database.connections.' . config('database.default') . '.host'),
+                'port' => config('database.connections.' . config('database.default') . '.port'),
+                'database' => config('database.connections.' . config('database.default') . '.database')
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Application error',
+            'message' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Enable debug mode for trace'
+        ], 500);
+    }
 });
 
 require __DIR__.'/auth.php';

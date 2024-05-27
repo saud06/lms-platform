@@ -11,9 +11,9 @@ import AuthLayout from './components/layout/AuthLayout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // Pages
-import LoginPage from './pages/auth/LoginPage'
-import RegisterPage from './pages/auth/RegisterPage'
-import DashboardPage from './pages/DashboardPage'
+import LoginPage from './pages/auth/LoginPage.jsx'
+import RegisterPage from './pages/auth/RegisterPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminQuizzes from './pages/admin/AdminQuizzes'
 import ManageUsers from './pages/admin/ManageUsers'

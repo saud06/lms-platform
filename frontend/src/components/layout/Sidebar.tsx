@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   BookOpen,
   GraduationCap,
@@ -32,7 +32,7 @@ const instructorNavigation = [
 
 export function Sidebar() {
   const location = useLocation()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/')

@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -14,7 +14,7 @@ import { LogOut, User, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function Header() {
-  const { user, logout } = useAuthStore()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
     logout()

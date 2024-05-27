@@ -235,32 +235,53 @@ Route::put('/admin/settings', function (Request $request) {
 // NOTE: For demo purposes only. Replace with real auth later.
 
 Route::post('/login', function (Request $request) {
-    $data = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|string',
-    ]);
+    try {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
 
-    $users = [
-        'admin@example.com' => ['id' => 1, 'name' => 'Admin User', 'role' => 'admin'],
-        'instructor@example.com' => ['id' => 2, 'name' => 'Instructor User', 'role' => 'instructor'],
-        'student@example.com' => ['id' => 3, 'name' => 'Student User', 'role' => 'student'],
-    ];
+        $users = [
+            'admin@example.com' => ['id' => 1, 'name' => 'Admin User', 'role' => 'admin'],
+            'instructor@example.com' => ['id' => 2, 'name' => 'Instructor User', 'role' => 'instructor'],
+            'student@example.com' => ['id' => 3, 'name' => 'Student User', 'role' => 'student'],
+        ];
 
-    if (!isset($users[$data['email']]) || $data['password'] !== 'password') {
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        // Debug logging
+        \Log::info('Login attempt', [
+            'email' => $data['email'],
+            'user_exists' => isset($users[$data['email']]),
+            'password_correct' => $data['password'] === 'password'
+        ]);
+
+        if (!isset($users[$data['email']]) || $data['password'] !== 'password') {
+            \Log::warning('Invalid login attempt', ['email' => $data['email']]);
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $user = $users[$data['email']];
+        $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
+
+        // Persist mapping token -> user for demo auth
+        Cache::put('auth:token:'.$token, $user, now()->addDays(7));
+
+        \Log::info('Successful login', ['user' => $user, 'token' => substr($token, 0, 20) . '...']);
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token,
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Login error', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'message' => 'Authentication system error',
+            'error' => config('app.debug') ? $e->getMessage() : 'Internal error'
+        ], 500);
     }
-
-    $user = $users[$data['email']];
-    $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
-
-    // Persist mapping token -> user for demo auth
-    Cache::put('auth:token:'.$token, $user, now()->addDays(7));
-
-    return response()->json([
-        'message' => 'Login successful',
-        'user' => $user,
-        'token' => $token,
-    ]);
 });
 
 Route::post('/register', function (Request $request) {
