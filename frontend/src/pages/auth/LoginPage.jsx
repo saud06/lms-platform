@@ -98,6 +98,17 @@ export default function LoginPage() {
             {isLoading ? t('auth.login.signingIn', 'Signing in...') : t('auth.login.button', 'Sign In')}
           </Button>
         </form>
+        
+        {/* Demo Credentials */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Demo Credentials</h4>
+          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+            <div><strong>Admin:</strong> admin@lms.com / admin123</div>
+            <div><strong>Instructor:</strong> instructor@lms.com / instructor123</div>
+            <div><strong>Student:</strong> student@lms.com / student123</div>
+          </div>
+        </div>
+
         <div className="mt-4 text-center text-sm">
           {t('auth.login.noAccount', "Don't have an account?")}{' '}
           <Link to="/auth/register" className="text-blue-600 hover:underline">

@@ -1,185 +1,155 @@
-# LMS Platform (Laravel + React)
+# LMS Platform
 
-A full-featured Learning Management System with Laravel API backend, React (Vite) frontend, and modern deployment architecture.
+A modern Learning Management System built with Laravel and React, featuring comprehensive user management, course creation, interactive quizzes, and a responsive design with dark/light theme support.
 
-## 🚀 Quick Deploy
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/saud06/lms-platform)
-
-**Architecture**: Render Docker + Railway MySQL
- 
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue)
 ![Laravel](https://img.shields.io/badge/Laravel-10-red)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![Vite](https://img.shields.io/badge/Vite-Frontend%20Build-purple)
-![Azure DevOps](https://img.shields.io/badge/Azure%20DevOps-CI%20Pipeline-0078D7)
+![MySQL](https://img.shields.io/badge/MySQL-Database-orange)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 
-> An intentionally minimal LMS starter that demonstrates a clean Laravel API, a Vite-powered React UI, and a straightforward Azure DevOps CI configuration — great for portfolios and quick demos.
+## ✨ Features
 
----
+### 🎓 **Learning Management**
+- **Course Management** - Create, edit, and organize courses with detailed descriptions
+- **Interactive Quizzes** - Multiple choice questions with instant feedback
+- **Progress Tracking** - Monitor student progress and completion rates
+- **User Roles** - Admin, Instructor, and Student role management
 
-## Stack
+### 🎨 **User Experience**
+- **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
+- **Dark/Light Theme** - Toggle between themes with persistent preference
+- **Multi-language Support** - German and English language options
+- **Modern UI** - Clean, intuitive interface built with Tailwind CSS
 
-- Backend: Laravel 10 (PHP 8.2), Composer
-- Frontend: React 18 + Vite (JavaScript)
-- CI: Azure DevOps Pipelines (`azure-pipelines.yml`)
+### 🔐 **Authentication & Security**
+- **JWT Authentication** - Secure token-based authentication
+- **Role-based Access** - Different permissions for different user types
+- **Password Security** - Secure password hashing and validation
 
-## Run locally (Windows)
+### 🛠️ **Technical Features**
+- **RESTful API** - Well-structured Laravel API endpoints
+- **Real-time Updates** - Dynamic content updates without page refresh
+- **Database Seeding** - Pre-populated demo data for testing
+- **Error Handling** - Comprehensive error handling and user feedback
 
-Option A — Quick script
+## 🚀 Tech Stack
 
-1. Install: PHP 8.2+, Composer, Node.js 18+
-2. In PowerShell, run:
-```pwsh
-./start-local.ps1
-```
-This will install deps and start: Laravel at http://127.0.0.1:8000 and Vite at http://127.0.0.1:3000.
-
-Option B — Manual
-
-Backend
-```pwsh
-cd backend
-composer install
-copy .env.example .env
-php artisan key:generate
-php artisan serve --host=127.0.0.1 --port=8000
-```
-
-Frontend (new terminal)
-```pwsh
-cd frontend
-npm install
-npm run dev
-```
-
-## Verify
-
-- API: `GET http://127.0.0.1:8000/api/test` returns a small JSON payload.
-- UI: Open http://127.0.0.1:3000 — it calls `/api/test` via Vite proxy.
-
-## Azure DevOps CI
-
-The pipeline builds backend and frontend (no deploy): see `azure-pipelines.yml`.
-
-## Notes (AI assistance)
-
-Used GitHub Copilot and Sweep AI to speed up scaffolding, small code snippets, and review suggestions.
-
-## Project goal
-
-Keep it fresh, minimal, and focused on the title: Laravel + React + Azure DevOps.
-
----
-
-## 🚀 Features
-
-- **Minimal API** — Simple health endpoint (`/api/test`) and demo course progress route.
-- **React + Vite Frontend** — Lightweight UI that calls the API via Vite proxy.
-- **Azure DevOps CI** — Single pipeline to install, build, and run checks for backend and frontend.
-- **Windows-first DX** — `start-local.ps1` to bootstrap quickly on Windows.
-
----
-
-## 🧩 Tech Stack
-
-| Layer     | Technology               |
-|-----------|--------------------------|
-| Backend   | Laravel 10 (PHP 8.2)     |
-| Frontend  | React 18 + Vite          |
-| CI        | Azure DevOps Pipelines   |
-| Package   | Composer (PHP), npm (JS) |
-
----
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Laravel 10 (PHP 8.2) |
+| **Frontend** | React 18 + Vite |
+| **Database** | MySQL |
+| **Styling** | Tailwind CSS |
+| **Authentication** | JWT |
+| **Package Management** | Composer, npm |
 
 ## 📦 Installation
 
+### Prerequisites
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- MySQL
+
+### Setup
+
+1. **Clone the repository**
 ```bash
 git clone https://github.com/saud06/lms-platform.git
 cd lms-platform
 ```
 
-Backend
+2. **Backend Setup**
 ```bash
 cd backend
 composer install
-copy .env.example .env   # PowerShell: copy .env.example .env
+cp .env.example .env
 php artisan key:generate
-php artisan serve --host=127.0.0.1 --port=8000
+php artisan migrate
+php artisan db:seed
+php artisan serve
 ```
 
-Frontend (new terminal)
+3. **Frontend Setup** (new terminal)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
----
+4. **Access the Application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
 
-## 🖥️ Usage
+## 👥 Demo Users
 
-### Verify Endpoints
+The application comes with pre-seeded demo users:
 
-- API health
-```bash
-curl http://127.0.0.1:8000/api/test
-```
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@lms.com | admin123 |
+| **Instructor** | instructor@lms.com | instructor123 |
+| **Student** | student@lms.com | student123 |
 
-- React dev server
-Open http://127.0.0.1:3000 — the UI fetches from `/api/test` via the Vite dev proxy.
+## 🎯 Usage
 
-### Example API Response
+### For Students
+- Browse available courses
+- Take interactive quizzes
+- Track learning progress
+- Switch between themes and languages
 
-```json
-{
-  "message": "API is working!",
-  "timestamp": "2025-01-01T12:00:00Z"
-}
-```
+### For Instructors
+- Create and manage courses
+- Design quizzes with multiple choice questions
+- Monitor student progress
+- Manage course content
 
----
+### For Administrators
+- Full system access
+- User management
+- Course oversight
+- System configuration
 
-## 🧪 Azure DevOps CI
+## 🔧 API Endpoints
 
-This repo includes a minimal pipeline at `azure-pipelines.yml` that:
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
 
-- Installs PHP/Composer deps and runs basic Laravel tasks
-- Installs Node deps and builds the frontend
+### Courses
+- `GET /api/courses` - List all courses
+- `POST /api/courses` - Create new course
+- `GET /api/courses/{id}` - Get course details
+- `PUT /api/courses/{id}` - Update course
 
-Trigger: pushes to `main`.
+### Quizzes
+- `GET /api/quizzes` - List quizzes
+- `POST /api/quizzes` - Create quiz
+- `POST /api/quizzes/{id}/attempt` - Submit quiz attempt
 
----
+## 🌟 Screenshots
 
-## 📚 API Overview (Starter)
+*Add screenshots of your LMS platform here*
 
-- `GET /api/test` — Returns a small JSON payload with a message and timestamp.
-- `GET /api/student/courses/{courseId}/progress` — Example route for demo student progress.
+## 🤝 Contributing
 
----
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📸 Screenshots
+## 📄 License
 
-**Landing Page**
-
-![Landing](docs/landing.jpg)
-
-**Admin Dashboard**
-
-![Admin Dashboard](docs/dashboard.PNG)
-
----
-
-## 💡 Why I Built This
-
-> As a Master's student in Web & Data Science with 2.5+ years in software development, I wanted a clean, production-like template that highlights **web engineering fundamentals**: API design, frontend integration, and CI, without over-engineering.
-
----
+This project is open source and available under the [MIT License](LICENSE).
 
 ## 📬 Contact
 
-* **GitHub**: [saud06](https://github.com/saud06)
-* **LinkedIn**: [Saud M.](https://linkedin.com/in/saud06)
-* **Email**: [saud.mn6@gmail.com](mailto:saud.mn6@gmail.com)
+- **GitHub**: [saud06](https://github.com/saud06)
+- **LinkedIn**: [Saud M.](https://linkedin.com/in/saud06)
+- **Email**: [saud.mn6@gmail.com](mailto:saud.mn6@gmail.com)
 
