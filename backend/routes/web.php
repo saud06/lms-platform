@@ -13,12 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Serve React frontend for all non-API routes
-Route::get('/{any}', function () {
-    return file_get_contents(public_path('index.html'));
-})->where('any', '.*');
-
-// API status endpoint
+// API status endpoint first (before catch-all)
 Route::get('/api/status', function () {
     try {
         return response()->json([
@@ -41,6 +36,11 @@ Route::get('/api/status', function () {
             'trace' => config('app.debug') ? $e->getTraceAsString() : 'Enable debug mode for trace'
         ], 500);
     }
+});
+
+// Serve React frontend for all other routes (catch-all)
+Route::fallback(function () {
+    return file_get_contents(public_path('index.html'));
 });
 
 // Auth routes removed during cleanup
