@@ -39,38 +39,53 @@ use App\Models\QuizAnswer;
 
 // Authentication Routes
 Route::post('/login', function (Request $request) {
-    $data = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|string',
-    ]);
+    try {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
 
-    // Check if user exists in database
-    $dbUser = User::where('email', $data['email'])->first();
-    
-    if (!$dbUser || !Hash::check($data['password'], $dbUser->password)) {
+        // Check if user exists in database
+        $dbUser = User::where('email', $data['email'])->first();
+        
+        if (!$dbUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 401);
+        }
+        
+        if (!Hash::check($data['password'], $dbUser->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid password'
+            ], 401);
+        }
+
+        $user = [
+            'id' => $dbUser->id,
+            'name' => $dbUser->name,
+            'role' => $dbUser->role,
+            'email' => $dbUser->email,
+        ];
+        
+        $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
+        
+        Cache::put('auth:token:'.$token, $user, now()->addDays(7));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token
+        ]);
+    } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'Invalid credentials'
-        ], 401);
+            'message' => 'Login error: ' . $e->getMessage(),
+            'error' => $e->getTraceAsString()
+        ], 500);
     }
-
-    $user = [
-        'id' => $dbUser->id,
-        'name' => $dbUser->name,
-        'role' => $dbUser->role,
-        'email' => $dbUser->email,
-    ];
-    
-    $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
-    
-    Cache::put('auth:token:'.$token, $user, now()->addDays(7));
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Login successful',
-        'user' => $user,
-        'token' => $token
-    ]);
 });
 
 Route::post('/register', function (Request $request) {
