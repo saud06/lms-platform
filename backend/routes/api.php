@@ -45,22 +45,25 @@ Route::get('/test', function () {
     ]);
 });
 
-// Authentication Routes
+// Authentication Routes - Minimal implementation to avoid regex issues
 Route::post('/login', function (Request $request) {
     try {
-        // Simple validation first
-        if (!$request->has('email') || !$request->has('password')) {
+        // Get raw input to avoid Laravel validation
+        $input = $request->getContent();
+        $data = json_decode($input, true);
+        
+        if (!$data || !isset($data['email']) || !isset($data['password'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email and password required'
             ], 400);
         }
 
-        $email = $request->input('email');
-        $password = $request->input('password');
+        $email = $data['email'];
+        $password = $data['password'];
 
-        // Check if user exists in database
-        $dbUser = User::where('email', $email)->first();
+        // Use raw query to avoid potential Eloquent issues
+        $dbUser = DB::table('users')->where('email', $email)->first();
         
         if (!$dbUser) {
             return response()->json([
@@ -85,7 +88,8 @@ Route::post('/login', function (Request $request) {
         
         $token = 'demo_token_'.md5($email.'|'.microtime(true));
         
-        Cache::put('auth:token:'.$token, $user, now()->addDays(7));
+        // Use simple session storage instead of cache
+        session(['auth_token' => $token, 'user' => $user]);
 
         return response()->json([
             'success' => true,
@@ -97,7 +101,8 @@ Route::post('/login', function (Request $request) {
         return response()->json([
             'success' => false,
             'message' => 'Login error: ' . $e->getMessage(),
-            'error' => $e->getTraceAsString()
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
         ], 500);
     }
 });
