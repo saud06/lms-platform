@@ -219,6 +219,95 @@ try {
         exit();
     }
     
+    // Handle courses/{id}/quiz
+    if (preg_match('/^courses\/(\d+)\/quiz$/', $path, $matches)) {
+        $courseId = $matches[1];
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->prepare("SELECT * FROM quizzes WHERE course_id = ?");
+            $stmt->execute([$courseId]);
+            $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($quiz) {
+                // Return quiz directly (frontend expects object, not wrapped)
+                echo json_encode($quiz);
+            } else {
+                // Return empty quiz structure if none exists
+                echo json_encode([
+                    'id' => null,
+                    'course_id' => $courseId,
+                    'title' => '',
+                    'description' => '',
+                    'questions' => []
+                ]);
+            }
+        }
+        exit();
+    }
+    
+    // Handle admin/users/{id}
+    if (preg_match('/^admin\/users\/(\d+)$/', $path, $matches)) {
+        $userId = $matches[1];
+        
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->prepare("SELECT id, name, email, role, created_at FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user) {
+                echo json_encode($user);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'User not found']);
+            }
+            
+        } elseif ($method === 'PUT') {
+            // Update user
+            $updateFields = [];
+            $updateValues = [];
+            
+            foreach ($data as $key => $value) {
+                if (in_array($key, ['name', 'email', 'role'])) {
+                    $updateFields[] = "`$key` = ?";
+                    $updateValues[] = $value;
+                }
+            }
+            
+            if (!empty($updateFields)) {
+                $updateValues[] = $userId;
+                $sql = "UPDATE users SET " . implode(', ', $updateFields) . " WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($updateValues);
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'User updated successfully'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No valid fields to update'
+                ]);
+            }
+            
+        } elseif ($method === 'DELETE') {
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'User deleted successfully'
+            ]);
+        }
+        exit();
+    }
+    
     // Handle admin/courses/{id}
     if (preg_match('/^admin\/courses\/(\d+)$/', $path, $matches)) {
         $courseId = $matches[1];
@@ -235,10 +324,8 @@ try {
             $course = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($course) {
-                echo json_encode([
-                    'success' => true,
-                    'course' => $course
-                ]);
+                // Return course directly (frontend expects object, not wrapped)
+                echo json_encode($course);
             } else {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Course not found']);
@@ -425,7 +512,9 @@ try {
             'GET /api/me',
             'GET /api/courses',
             'POST /api/courses',
+            'GET /api/courses/{id}/quiz',
             'GET /api/users',
+            'GET /api/quizzes',
             'GET /api/dashboard/admin',
             'GET /api/admin/courses',
             'POST /api/admin/courses',
@@ -433,6 +522,9 @@ try {
             'PUT /api/admin/courses/{id}',
             'DELETE /api/admin/courses/{id}',
             'GET /api/admin/users',
+            'GET /api/admin/users/{id}',
+            'PUT /api/admin/users/{id}',
+            'DELETE /api/admin/users/{id}',
             'GET /api/admin/settings',
             'PUT /api/admin/settings'
         ]
