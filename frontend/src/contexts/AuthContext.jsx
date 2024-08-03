@@ -70,16 +70,8 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      // Use the working PHP login endpoint
-      const response = await axios.post('https://lms-platform-i2dl.onrender.com/api-login.php', { 
-        email, 
-        password 
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      // Use the API endpoint which will be redirected to PHP
+      const response = await api.post('/login', { email, password });
       
       // Check if response has the expected structure
       if (!response.data || typeof response.data !== 'object') {
