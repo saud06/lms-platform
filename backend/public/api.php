@@ -137,6 +137,92 @@ try {
         exit();
     }
     
+    // Handle dashboard/admin (admin dashboard stats)
+    if ($path === 'dashboard/admin') {
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            // Get dashboard statistics
+            $userCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            $courseCount = $pdo->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+            $enrollmentCount = $pdo->query("SELECT COUNT(*) FROM enrollments")->fetchColumn();
+            
+            echo json_encode([
+                'success' => true,
+                'stats' => [
+                    'total_users' => (int)$userCount,
+                    'total_courses' => (int)$courseCount,
+                    'total_enrollments' => (int)$enrollmentCount,
+                    'active_users' => (int)$userCount // For demo
+                ]
+            ]);
+        }
+        exit();
+    }
+    
+    // Handle admin/courses (list all courses for admin)
+    if ($path === 'admin/courses') {
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id ORDER BY c.created_at DESC");
+            $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'courses' => $courses
+            ]);
+            
+        } elseif ($method === 'POST') {
+            // Create new course
+            $stmt = $pdo->prepare("INSERT INTO courses (title, description, instructor_id, category, level, price, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $data['title'] ?? 'New Course',
+                $data['description'] ?? '',
+                $data['instructor_id'] ?? 1,
+                $data['category'] ?? 'general',
+                $data['level'] ?? 'beginner',
+                $data['price'] ?? 0,
+                $data['status'] ?? 'draft'
+            ]);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Course created successfully',
+                'course_id' => $pdo->lastInsertId()
+            ]);
+        }
+        exit();
+    }
+    
+    // Handle admin/users (list all users for admin)
+    if ($path === 'admin/users') {
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'users' => $users
+            ]);
+        }
+        exit();
+    }
+    
     // Handle admin/courses/{id}
     if (preg_match('/^admin\/courses\/(\d+)$/', $path, $matches)) {
         $courseId = $matches[1];
@@ -332,13 +418,17 @@ try {
             'GET /api/health',
             'POST /api/login',
             'GET /api/test',
+            'GET /api/me',
             'GET /api/courses',
             'POST /api/courses',
+            'GET /api/users',
+            'GET /api/dashboard/admin',
+            'GET /api/admin/courses',
+            'POST /api/admin/courses',
             'GET /api/admin/courses/{id}',
             'PUT /api/admin/courses/{id}',
             'DELETE /api/admin/courses/{id}',
-            'GET /api/users',
-            'GET /api/me',
+            'GET /api/admin/users',
             'GET /api/admin/settings',
             'PUT /api/admin/settings'
         ]
