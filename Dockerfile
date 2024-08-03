@@ -51,9 +51,9 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo '' >> /start.sh && \
     echo '# Ensure directories exist and have correct permissions' >> /start.sh && \
     echo 'mkdir -p resources/views storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache' >> /start.sh && \
+    echo 'touch storage/logs/laravel.log' >> /start.sh && \
     echo 'chown -R www-data:www-data storage bootstrap/cache resources' >> /start.sh && \
-    echo 'chmod -R 775 storage bootstrap/cache resources' >> /start.sh && \
-    echo 'chmod -R 777 storage/logs storage/framework' >> /start.sh && \
+    echo 'chmod -R 777 storage bootstrap/cache resources' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔑 Checking APP_KEY..."' >> /start.sh && \
     echo 'if [ -z "$APP_KEY" ]; then echo "❌ APP_KEY is not set!"; exit 1; fi' >> /start.sh && \
@@ -63,6 +63,7 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'php artisan config:clear || echo "Config clear failed"' >> /start.sh && \
     echo 'php artisan route:clear || echo "Route clear failed"' >> /start.sh && \
     echo 'php artisan view:clear || echo "View clear failed"' >> /start.sh && \
+    echo 'echo "LOG_CHANNEL=stderr" >> .env' >> /start.sh && \
     echo '' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🗄️ Running database migrations..."' >> /start.sh && \
