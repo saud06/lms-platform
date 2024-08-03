@@ -24,6 +24,30 @@ Route::get('/', function () {
     ]);
 });
 
+// Serve React app for all auth routes
+Route::get('/auth/{any}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
+// Serve React app for all dashboard routes  
+Route::get('/dashboard/{any?}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
+// Serve React app for all courses routes
+Route::get('/courses/{any?}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
 // Direct POST test in web routes to bypass API issues
 Route::post('/test-post', function (Request $request) {
     return response()->json([
