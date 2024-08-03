@@ -16,7 +16,7 @@ const getBaseURL = () => {
     
     // For Render deployments, use the correct backend URL
     if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
-      return 'https://lms-backend-qn4t.onrender.com/api';
+      return 'https://lms-platform-i2dl.onrender.com/api';
     }
     
     throw new Error('Production deployment requires absolute backend URL. Please configure VITE_API_URL.');

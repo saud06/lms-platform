@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect } from 'react'
 import Cookies from 'js-cookie'
+import axios from 'axios'
 import { api } from '../lib/api'
 
 const AuthContext = createContext()
@@ -69,29 +70,26 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/login', { email, password });
+      // Use the working PHP login endpoint
+      const response = await axios.post('https://lms-platform-i2dl.onrender.com/api-login.php', { 
+        email, 
+        password 
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
       
       // Check if response has the expected structure
       if (!response.data || typeof response.data !== 'object') {
-        // Try to determine the specific issue
-        let errorMessage = 'Invalid response format received from server';
-        if (typeof response.data === 'string') {
-          if (response.data.includes('404')) {
-            errorMessage = 'Login endpoint not found (404). Check if backend is deployed correctly.';
-          } else if (response.data.includes('<html>')) {
-            errorMessage = 'Received HTML instead of JSON. This indicates a server error or incorrect URL.';
-          } else if (response.data.includes('CORS')) {
-            errorMessage = 'CORS error detected. Backend may not allow requests from this domain.';
-          }
-        }
-        
-        throw new Error(`${errorMessage} Expected JSON object with user and token fields, but got ${typeof response.data}. Response: ${String(response.data).substring(0, 200)}`);
+        throw new Error('Invalid response format received from server');
       }
       
-      const { user, token } = response.data;
+      const { user, token, success } = response.data;
       
-      if (!user || !token) {
-        throw new Error('Login response missing user or token');
+      if (!success || !user || !token) {
+        throw new Error(response.data.message || 'Login failed');
       }
       
       Cookies.set('token', token, { expires: 7 });
@@ -104,6 +102,9 @@ export function AuthProvider({ children }) {
       
     } catch (error) {
       console.error('Login failed:', error.message);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
       throw error;
     }
   }
