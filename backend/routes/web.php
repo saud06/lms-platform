@@ -13,34 +13,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// API status endpoint first (before catch-all)
-Route::get('/api/status', function () {
-    try {
-        return response()->json([
-            'Laravel' => app()->version(),
-            'message' => 'LMS Backend API is running',
-            'timestamp' => now()->toIso8601String(),
-            'environment' => app()->environment(),
-            'debug' => config('app.debug'),
-            'database' => [
-                'connection' => config('database.default'),
-                'host' => config('database.connections.' . config('database.default') . '.host'),
-                'port' => config('database.connections.' . config('database.default') . '.port'),
-                'database' => config('database.connections.' . config('database.default') . '.database')
-            ]
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Application error',
-            'message' => $e->getMessage(),
-            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Enable debug mode for trace'
-        ], 500);
+// Simple root route to serve React app
+Route::get('/', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
     }
-});
-
-// Serve React frontend for all other routes (catch-all)
-Route::fallback(function () {
-    return file_get_contents(public_path('index.html'));
+    return response()->json([
+        'message' => 'LMS Platform - React frontend not built yet',
+        'api_status' => 'Available at /api/*'
+    ]);
 });
 
 // Auth routes removed during cleanup

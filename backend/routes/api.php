@@ -37,16 +37,30 @@ use App\Models\QuizAnswer;
 
 // Helper functions are defined in app/helpers.php
 
+// Simple test endpoint
+Route::get('/test', function () {
+    return response()->json([
+        'message' => 'API is working!',
+        'timestamp' => now()->toIso8601String()
+    ]);
+});
+
 // Authentication Routes
 Route::post('/login', function (Request $request) {
     try {
-        $data = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+        // Simple validation first
+        if (!$request->has('email') || !$request->has('password')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email and password required'
+            ], 400);
+        }
+
+        $email = $request->input('email');
+        $password = $request->input('password');
 
         // Check if user exists in database
-        $dbUser = User::where('email', $data['email'])->first();
+        $dbUser = User::where('email', $email)->first();
         
         if (!$dbUser) {
             return response()->json([
@@ -55,7 +69,7 @@ Route::post('/login', function (Request $request) {
             ], 401);
         }
         
-        if (!Hash::check($data['password'], $dbUser->password)) {
+        if (!Hash::check($password, $dbUser->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid password'
@@ -69,7 +83,7 @@ Route::post('/login', function (Request $request) {
             'email' => $dbUser->email,
         ];
         
-        $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
+        $token = 'demo_token_'.md5($email.'|'.microtime(true));
         
         Cache::put('auth:token:'.$token, $user, now()->addDays(7));
 
