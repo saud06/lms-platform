@@ -9,10 +9,8 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Redirect specific API endpoints to PHP files
-    RewriteRule ^api/login$ api-login.php [L]
-    RewriteRule ^api/admin/settings$ api-settings.php [L]
-    RewriteRule ^api/test$ test-get.php [L]
+    # Redirect ALL API requests to the unified PHP handler
+    RewriteRule ^api/(.*)$ api.php [L]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

@@ -27,12 +27,23 @@ try {
 
 // Get request info
 $method = $_SERVER['REQUEST_METHOD'];
-$path = $_GET['path'] ?? '';
+$requestUri = $_SERVER['REQUEST_URI'];
+$path = '';
+
+// Extract path from REQUEST_URI
+if (strpos($requestUri, '/api/') !== false) {
+    $path = substr($requestUri, strpos($requestUri, '/api/') + 5);
+    // Remove query parameters
+    if (strpos($path, '?') !== false) {
+        $path = substr($path, 0, strpos($path, '?'));
+    }
+}
+
 $input = file_get_contents('php://input');
 $data = json_decode($input, true) ?? [];
 
 // Simple authentication check
-function checkAuth($pdo) {
+function checkAuth() {
     $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (strpos($authHeader, 'Bearer ') === 0) {
         $token = substr($authHeader, 7);
@@ -46,123 +57,269 @@ function checkAuth($pdo) {
 
 // Route handler
 try {
-    switch ($path) {
-        case 'admin/settings':
-            if ($method === 'GET') {
-                // Get settings
-                $stmt = $pdo->query("SELECT * FROM settings");
-                $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                $settingsObj = [];
-                foreach ($settings as $setting) {
-                    $settingsObj[$setting['key']] = $setting['value'];
-                }
-                
-                echo json_encode([
-                    'success' => true,
-                    'settings' => $settingsObj
-                ]);
-                
-            } elseif ($method === 'PUT') {
-                if (!checkAuth($pdo)) {
-                    http_response_code(401);
-                    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-                    exit();
-                }
-                
-                // Update settings
-                foreach ($data as $key => $value) {
-                    $stmt = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?");
-                    $stmt->execute([$key, $value, $value]);
-                }
-                
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Settings updated successfully'
-                ]);
-            }
-            break;
+    // Handle login endpoint
+    if ($path === 'login' && $method === 'POST') {
+        if (!isset($data['email']) || !isset($data['password'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Email and password required']);
+            exit();
+        }
+        
+        $email = $data['email'];
+        $inputPassword = $data['password'];
+        
+        // Get user from database
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit();
+        }
+        
+        // Verify password
+        if (!password_verify($inputPassword, $user['password'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Invalid password']);
+            exit();
+        }
+        
+        // Success
+        echo json_encode([
+            'success' => true,
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'role' => $user['role']
+            ],
+            'token' => 'demo_token_' . md5($email . time())
+        ]);
+        exit();
+    }
+    
+    // Handle admin/settings
+    if ($path === 'admin/settings') {
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT * FROM settings");
+            $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-        case 'courses':
-            if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.status = 'published'");
-                $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                echo json_encode([
-                    'success' => true,
-                    'courses' => $courses
-                ]);
+            $settingsObj = [];
+            foreach ($settings as $setting) {
+                $settingsObj[$setting['key']] = $setting['value'];
             }
-            break;
             
-        case 'users':
-            if (!checkAuth($pdo)) {
+            echo json_encode([
+                'success' => true,
+                'settings' => $settingsObj
+            ]);
+            
+        } elseif ($method === 'PUT') {
+            if (!checkAuth()) {
                 http_response_code(401);
                 echo json_encode(['success' => false, 'message' => 'Unauthorized']);
                 exit();
             }
             
-            if ($method === 'GET') {
-                $stmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
-                $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                echo json_encode([
-                    'success' => true,
-                    'users' => $users
-                ]);
-            }
-            break;
-            
-        case 'me':
-            if (!checkAuth($pdo)) {
-                http_response_code(401);
-                echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-                exit();
+            foreach ($data as $key => $value) {
+                $stmt = $pdo->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?");
+                $stmt->execute([$key, $value, $value]);
             }
             
-            // For demo, return admin user
-            $stmt = $pdo->prepare("SELECT id, name, email, role FROM users WHERE email = ?");
-            $stmt->execute(['admin@lms.com']);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Settings updated successfully'
+            ]);
+        }
+        exit();
+    }
+    
+    // Handle admin/courses/{id}
+    if (preg_match('/^admin\/courses\/(\d+)$/', $path, $matches)) {
+        $courseId = $matches[1];
+        
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->prepare("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.id = ?");
+            $stmt->execute([$courseId]);
+            $course = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($user) {
+            if ($course) {
                 echo json_encode([
                     'success' => true,
-                    'user' => $user
+                    'course' => $course
                 ]);
             } else {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'User not found']);
+                echo json_encode(['success' => false, 'message' => 'Course not found']);
             }
-            break;
             
-        case 'test':
+        } elseif ($method === 'PUT') {
+            // Update course
+            $updateFields = [];
+            $updateValues = [];
+            
+            foreach ($data as $key => $value) {
+                if (in_array($key, ['title', 'description', 'category', 'level', 'price', 'status'])) {
+                    $updateFields[] = "`$key` = ?";
+                    $updateValues[] = $value;
+                }
+            }
+            
+            if (!empty($updateFields)) {
+                $updateValues[] = $courseId;
+                $sql = "UPDATE courses SET " . implode(', ', $updateFields) . " WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($updateValues);
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Course updated successfully'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No valid fields to update'
+                ]);
+            }
+            
+        } elseif ($method === 'DELETE') {
+            $stmt = $pdo->prepare("DELETE FROM courses WHERE id = ?");
+            $stmt->execute([$courseId]);
+            
             echo json_encode([
                 'success' => true,
-                'message' => 'PHP API is working!',
-                'method' => $method,
-                'path' => $path,
-                'timestamp' => date('Y-m-d H:i:s')
+                'message' => 'Course deleted successfully'
             ]);
-            break;
-            
-        default:
-            http_response_code(404);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Endpoint not found',
-                'path' => $path,
-                'method' => $method,
-                'available_endpoints' => [
-                    'GET /api.php?path=test',
-                    'GET /api.php?path=courses',
-                    'GET /api.php?path=users',
-                    'GET /api.php?path=me',
-                    'GET /api.php?path=admin/settings',
-                    'PUT /api.php?path=admin/settings'
-                ]
-            ]);
+        }
+        exit();
     }
+    
+    // Handle courses (general)
+    if ($path === 'courses') {
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.status = 'published' ORDER BY c.created_at DESC");
+            $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'courses' => $courses
+            ]);
+            
+        } elseif ($method === 'POST') {
+            if (!checkAuth()) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+                exit();
+            }
+            
+            $stmt = $pdo->prepare("INSERT INTO courses (title, description, instructor_id, category, level, price, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $data['title'] ?? '',
+                $data['description'] ?? '',
+                $data['instructor_id'] ?? 1,
+                $data['category'] ?? '',
+                $data['level'] ?? 'beginner',
+                $data['price'] ?? 0,
+                $data['status'] ?? 'draft'
+            ]);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Course created successfully',
+                'course_id' => $pdo->lastInsertId()
+            ]);
+        }
+        exit();
+    }
+    
+    // Handle users
+    if ($path === 'users') {
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'users' => $users
+            ]);
+        }
+        exit();
+    }
+    
+    // Handle me
+    if ($path === 'me') {
+        if (!checkAuth()) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+        
+        // For demo, return admin user
+        $stmt = $pdo->prepare("SELECT id, name, email, role FROM users WHERE email = ?");
+        $stmt->execute(['admin@lms.com']);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
+            echo json_encode([
+                'success' => true,
+                'user' => $user
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+        }
+        exit();
+    }
+    
+    // Handle test
+    if ($path === 'test') {
+        echo json_encode([
+            'success' => true,
+            'message' => 'PHP API is working!',
+            'method' => $method,
+            'path' => $path,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit();
+    }
+    
+    // Default - endpoint not found
+    http_response_code(404);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Endpoint not found',
+        'path' => $path,
+        'method' => $method,
+        'request_uri' => $requestUri,
+        'available_endpoints' => [
+            'POST /api/login',
+            'GET /api/test',
+            'GET /api/courses',
+            'POST /api/courses',
+            'GET /api/admin/courses/{id}',
+            'PUT /api/admin/courses/{id}',
+            'DELETE /api/admin/courses/{id}',
+            'GET /api/users',
+            'GET /api/me',
+            'GET /api/admin/settings',
+            'PUT /api/admin/settings'
+        ]
+    ]);
     
 } catch (Exception $e) {
     http_response_code(500);
