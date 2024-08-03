@@ -45,6 +45,43 @@ Route::get('/test', function () {
     ]);
 });
 
+// Database test endpoint
+Route::get('/db-test', function () {
+    try {
+        $userCount = DB::table('users')->count();
+        $user = DB::table('users')->where('email', 'admin@lms.com')->first();
+        
+        return response()->json([
+            'database' => 'connected',
+            'users_count' => $userCount,
+            'admin_exists' => $user ? true : false,
+            'admin_data' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email] : null
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'database' => 'error',
+            'message' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile())
+        ], 500);
+    }
+});
+
+// Simple login test - just return success without database
+Route::post('/login-test', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'Login test successful',
+        'user' => [
+            'id' => 1,
+            'name' => 'Test User',
+            'role' => 'admin',
+            'email' => 'admin@lms.com'
+        ],
+        'token' => 'test_token_123'
+    ]);
+});
+
 // Authentication Routes - Minimal implementation to avoid regex issues
 Route::post('/login', function (Request $request) {
     try {
