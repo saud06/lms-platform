@@ -48,6 +48,30 @@ Route::get('/courses/{any?}', function () {
     return response()->json(['error' => 'Frontend not built']);
 })->where('any', '.*');
 
+// Serve React app for all admin routes
+Route::get('/admin/{any?}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
+// Serve React app for all quiz routes
+Route::get('/quizzes/{any?}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
+// Serve React app for all user routes
+Route::get('/users/{any?}', function () {
+    if (file_exists(public_path('index.html'))) {
+        return file_get_contents(public_path('index.html'));
+    }
+    return response()->json(['error' => 'Frontend not built']);
+})->where('any', '.*');
+
 // Direct POST test in web routes to bypass API issues
 Route::post('/test-post', function (Request $request) {
     return response()->json([

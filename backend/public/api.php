@@ -176,10 +176,8 @@ try {
             $stmt = $pdo->query("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id ORDER BY c.created_at DESC");
             $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            echo json_encode([
-                'success' => true,
-                'courses' => $courses
-            ]);
+            // Return courses array directly (frontend expects array, not object)
+            echo json_encode($courses);
             
         } elseif ($method === 'POST') {
             // Create new course
@@ -215,10 +213,8 @@ try {
             $stmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
             $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            echo json_encode([
-                'success' => true,
-                'users' => $users
-            ]);
+            // Return users array directly (frontend expects array, not object)
+            echo json_encode($users);
         }
         exit();
     }
@@ -295,10 +291,8 @@ try {
             $stmt = $pdo->query("SELECT c.*, u.name as instructor_name FROM courses c LEFT JOIN users u ON c.instructor_id = u.id WHERE c.status = 'published' ORDER BY c.created_at DESC");
             $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            echo json_encode([
-                'success' => true,
-                'courses' => $courses
-            ]);
+            // Return courses array directly (frontend expects array, not object)
+            echo json_encode($courses);
             
         } elseif ($method === 'POST') {
             if (!checkAuth()) {
@@ -339,10 +333,20 @@ try {
             $stmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC");
             $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            echo json_encode([
-                'success' => true,
-                'users' => $users
-            ]);
+            // Return users array directly (frontend expects array, not object)
+            echo json_encode($users);
+        }
+        exit();
+    }
+    
+    // Handle quizzes
+    if ($path === 'quizzes') {
+        if ($method === 'GET') {
+            $stmt = $pdo->query("SELECT q.*, c.title as course_title FROM quizzes q LEFT JOIN courses c ON q.course_id = c.id ORDER BY q.created_at DESC");
+            $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Return quizzes array directly (frontend expects array, not object)
+            echo json_encode($quizzes);
         }
         exit();
     }
