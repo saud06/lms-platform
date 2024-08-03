@@ -286,6 +286,28 @@ try {
         exit();
     }
     
+    // Handle health check (required by Render)
+    if ($path === 'health') {
+        try {
+            // Check database connection
+            $stmt = $pdo->query("SELECT 1");
+            echo json_encode([
+                'status' => 'healthy',
+                'database' => 'connected',
+                'timestamp' => date('c')
+            ]);
+        } catch (Exception $e) {
+            http_response_code(503);
+            echo json_encode([
+                'status' => 'unhealthy',
+                'database' => 'disconnected',
+                'error' => $e->getMessage(),
+                'timestamp' => date('c')
+            ]);
+        }
+        exit();
+    }
+    
     // Handle test
     if ($path === 'test') {
         echo json_encode([
@@ -307,6 +329,7 @@ try {
         'method' => $method,
         'request_uri' => $requestUri,
         'available_endpoints' => [
+            'GET /api/health',
             'POST /api/login',
             'GET /api/test',
             'GET /api/courses',
