@@ -10,7 +10,7 @@ class Setting extends Model
     use HasFactory;
 
     protected $fillable = [
-        'platform_name',
-        'support_email',
+        'key',
+        'value',
     ];
 }

@@ -67,6 +67,7 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo '' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🗄️ Running database migrations..."' >> /start.sh && \
+    echo 'php artisan migrate:fresh --force || echo "Migration fresh failed, trying regular migrate..."' >> /start.sh && \
     echo 'php artisan migrate --force || echo "Migration failed, continuing..."' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🌱 Seeding database with initial data..."' >> /start.sh && \
