@@ -47,7 +47,7 @@ Route::post('/login', function (Request $request) {
     // Check if user exists in database
     $dbUser = User::where('email', $data['email'])->first();
     
-    if (!$dbUser || $data['password'] !== 'password') {
+    if (!$dbUser || !Hash::check($data['password'], $dbUser->password)) {
         return response()->json([
             'success' => false,
             'message' => 'Invalid credentials'
