@@ -24,4 +24,48 @@ Route::get('/', function () {
     ]);
 });
 
+// Direct POST test in web routes to bypass API issues
+Route::post('/test-post', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'POST works in web routes!',
+        'method' => $request->method(),
+        'data' => $request->all()
+    ]);
+});
+
+// Direct login test in web routes
+Route::post('/test-login', function (Request $request) {
+    try {
+        $email = $request->input('email', 'admin@lms.com');
+        $password = $request->input('password', 'admin123');
+        
+        $user = DB::table('users')->where('email', $email)->first();
+        
+        if ($user && Hash::check($password, $user->password)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful via web routes',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role
+                ]
+            ]);
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid credentials'
+        ], 401);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
 // Auth routes removed during cleanup

@@ -49,6 +49,9 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "🚀 Starting LMS Platform on Render..."' >> /start.sh && \
     echo 'cd /var/www/html' >> /start.sh && \
     echo '' >> /start.sh && \
+    echo '# Enable Apache modules' >> /start.sh && \
+    echo 'a2enmod rewrite headers' >> /start.sh && \
+    echo '' >> /start.sh && \
     echo '# Ensure directories exist and have correct permissions' >> /start.sh && \
     echo 'mkdir -p resources/views storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache' >> /start.sh && \
     echo 'touch storage/logs/laravel.log' >> /start.sh && \
