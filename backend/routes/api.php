@@ -82,6 +82,25 @@ Route::post('/login-test', function (Request $request) {
     ]);
 });
 
+// Test both GET and POST for the same endpoint
+Route::get('/login-test', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'GET Login test successful',
+        'method' => 'GET'
+    ]);
+});
+
+// Test POST with different name
+Route::post('/post-test', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'POST test successful',
+        'method' => 'POST',
+        'data' => $request->all()
+    ]);
+});
+
 // Authentication Routes - Minimal implementation to avoid regex issues
 Route::post('/login', function (Request $request) {
     try {
