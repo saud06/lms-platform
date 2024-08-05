@@ -15,8 +15,10 @@
 
 ## API Cleanup
 - Removed `/api/test` endpoint from available endpoints list
+- **REMOVED entire `/api/seed-data` endpoint** (193 lines of code removed)
 - Added `/api/warmup` endpoint to available endpoints list
 - Streamlined endpoint documentation
+- Auto-seeding functionality now built into dashboard and other endpoints
 
 ## Git History
 - Squashed recent commits into a single comprehensive commit
