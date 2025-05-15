@@ -1,0 +1,23 @@
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# PHP/Laravel
+backend/vendor/
+backend/storage/*.key
+backend/storage/framework/
+backend/storage/logs/
+backend/.env
+backend/.env.*
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# Build artifacts
+coverage/
+*.zip

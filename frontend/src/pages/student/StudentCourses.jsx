@@ -1,0 +1,63 @@
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../../lib/api'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Link } from 'react-router-dom'
+import { BookOpen } from 'lucide-react'
+
+export default function StudentCourses() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['student-courses'],
+    queryFn: async () => {
+      const res = await api.get('/student/courses')
+      return res.data
+    },
+  })
+
+  if (isLoading) return <div>Loading your courses...</div>
+  if (error) return <div className="text-red-600">Failed to load courses.</div>
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">My Learning</h1>
+          <p className="text-gray-600">Your enrolled courses</p>
+        </div>
+        <Link to="/courses">
+          <Button variant="outline">Browse Courses</Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data?.map((enrollment) => (
+          <Card key={enrollment.id}>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center">
+                <BookOpen className="h-4 w-4 mr-2" />
+                {enrollment.course.title}
+              </CardTitle>
+              <CardDescription>
+                {enrollment.course.category} • {enrollment.course.level}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-3">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${enrollment.progress}%` }}></div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{enrollment.progress}% complete</p>
+              </div>
+              <Link to={`/courses/${enrollment.course.id}`}>
+                <Button size="sm" className="w-full">Continue</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+        {(data?.length ?? 0) === 0 && (
+          <div className="col-span-full text-center text-muted-foreground">No enrolled courses yet.</div>
+        )}
+      </div>
+    </div>
+  )
+}

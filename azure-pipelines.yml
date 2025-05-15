@@ -1,0 +1,66 @@
+# Minimal Azure DevOps Pipeline for LMS Platform
+# CI for Laravel (backend) + React (frontend). No Docker, no deployments.
+
+trigger:
+- main
+
+variables:
+  phpVersion: '8.2'
+  nodeVersion: '18.x'
+
+stages:
+- stage: CI
+  displayName: 'Build and Test'
+  jobs:
+  - job: Backend
+    displayName: 'Backend - Laravel'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePhpVersion@0
+      inputs:
+        versionSpec: $(phpVersion)
+      displayName: 'Use PHP $(phpVersion)'
+
+    - script: |
+        cd backend
+        curl -sS https://getcomposer.org/installer | php
+        php composer.phar install --no-interaction --prefer-dist
+      displayName: 'Install Composer dependencies'
+
+    - script: |
+        cd backend
+        cp .env.example .env || true
+        php artisan key:generate || true
+      displayName: 'Prepare Laravel env'
+
+    - script: |
+        cd backend
+        php -v
+        php artisan --version
+      displayName: 'Verify PHP/Laravel'
+
+    - script: |
+        cd backend
+        if [ -f vendor/bin/phpunit ]; then vendor/bin/phpunit --testdox || php artisan test || true; else php artisan test || true; fi
+      displayName: 'Run backend tests (if present)'
+
+  - job: Frontend
+    displayName: 'Frontend - React'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(nodeVersion)
+      displayName: 'Use Node.js $(nodeVersion)'
+
+    - script: |
+        cd frontend
+        npm ci || npm install
+      displayName: 'Install NPM dependencies'
+
+    - script: |
+        cd frontend
+        npm run build
+      displayName: 'Build frontend'

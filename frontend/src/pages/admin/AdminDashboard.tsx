@@ -1,0 +1,183 @@
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Users, BookOpen, DollarSign, TrendingUp, UserPlus, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { formatCurrency } from '@/lib/utils'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+export function AdminDashboard() {
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: async () => {
+      const response = await api.get('/dashboard/admin')
+      return response.data
+    },
+  })
+
+  if (isLoading) {
+    return <div>Loading dashboard...</div>
+  }
+
+  const { stats, enrollment_trends, top_courses, recent_enrollments } = dashboardData || {}
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Manage your LMS platform and monitor performance</p>
+        </div>
+        <div className="flex space-x-2">
+          <Link to="/admin/users">
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Manage Users
+            </Button>
+          </Link>
+          <Link to="/admin/courses">
+            <Button variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Manage Courses
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.total_students || 0} students, {stats?.total_instructors || 0} instructors
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total_courses || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.published_courses || 0} published
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total_enrollments || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.completed_enrollments || 0} completed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats?.total_revenue || 0)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Enrollment Trends */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Enrollment Trends</CardTitle>
+            <CardDescription>Monthly enrollment statistics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={enrollment_trends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line 
+                  type="monotone" 
+                  dataKey="enrollments" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Top Courses */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Courses</CardTitle>
+            <CardDescription>Most enrolled courses</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {top_courses?.map((course: any, index: number) => (
+              <div key={course.id} className="flex items-center space-x-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  {index + 1}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h4 className="font-medium text-sm">{course.title}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {course.enrollments_count} enrollments
+                  </p>
+                </div>
+                <Link to={`/courses/${course.id}`}>
+                  <Button size="sm" variant="outline">View</Button>
+                </Link>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Enrollments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Enrollments</CardTitle>
+          <CardDescription>Latest student enrollments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recent_enrollments?.map((enrollment: any) => (
+              <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div>
+                    <h4 className="font-medium">{enrollment.student.name}</h4>
+                    <p className="text-sm text-muted-foreground">{enrollment.student.email}</p>
+                  </div>
+                  <div className="text-sm">
+                    enrolled in <span className="font-medium">{enrollment.course.title}</span>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {new Date(enrollment.enrolled_at).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
