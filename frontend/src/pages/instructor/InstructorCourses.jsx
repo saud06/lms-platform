@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
@@ -151,6 +151,17 @@ export default function InstructorCourses() {
     setModalOpen(false)
   }
 
+  // Filter list using ?q= from the URL
+  const filtered = useMemo(() => {
+    const q = new URLSearchParams(location.search).get('q')?.toLowerCase().trim()
+    if (!q) return data || []
+    return (data || []).filter((c) =>
+      c.title?.toLowerCase().includes(q) ||
+      c.category?.toLowerCase().includes(q) ||
+      String(c.status || '').toLowerCase().includes(q)
+    )
+  }, [data, location.search])
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -168,7 +179,7 @@ export default function InstructorCourses() {
             <p className="text-sm text-muted-foreground">No courses yet.</p>
           )}
           <div className="grid md:grid-cols-2 gap-4">
-            {data?.map((c) => (
+            {filtered?.map((c) => (
               <div key={c.id} className="border rounded p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{c.title}</h3>

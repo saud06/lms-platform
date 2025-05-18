@@ -1,11 +1,13 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { BookOpen } from 'lucide-react'
 
 export default function StudentCourses() {
+  const location = useLocation()
   const { data, isLoading, error } = useQuery({
     queryKey: ['student-courses'],
     queryFn: async () => {
@@ -13,6 +15,19 @@ export default function StudentCourses() {
       return res.data
     },
   })
+
+  const filtered = useMemo(() => {
+    const q = new URLSearchParams(location.search).get('q')?.toLowerCase().trim()
+    if (!q) return data || []
+    return (data || []).filter((enrollment) => {
+      const c = enrollment.course || {}
+      return (
+        c.title?.toLowerCase().includes(q) ||
+        c.category?.toLowerCase().includes(q) ||
+        String(c.level || '').toLowerCase().includes(q)
+      )
+    })
+  }, [data, location.search])
 
   if (isLoading) return <div>Loading your courses...</div>
   if (error) return <div className="text-red-600">Failed to load courses.</div>
@@ -30,7 +45,7 @@ export default function StudentCourses() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data?.map((enrollment) => (
+        {filtered?.map((enrollment) => (
           <Card key={enrollment.id}>
             <CardHeader>
               <CardTitle className="text-base flex items-center">
@@ -54,7 +69,7 @@ export default function StudentCourses() {
             </CardContent>
           </Card>
         ))}
-        {(data?.length ?? 0) === 0 && (
+        {(filtered?.length ?? 0) === 0 && (
           <div className="col-span-full text-center text-muted-foreground">No enrolled courses yet.</div>
         )}
       </div>

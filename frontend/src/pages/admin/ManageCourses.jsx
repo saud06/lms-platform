@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { formatCurrency } from '../../lib/utils'
@@ -18,6 +18,7 @@ import QuizEditor from '../../components/quiz/QuizEditor'
 
 export default function ManageCourses() {
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setModalOpen] = useState(false)
@@ -39,6 +40,13 @@ export default function ManageCourses() {
       return res.data
     }
   })
+
+  // Initialize search from query param ?q=
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const q = params.get('q') || ''
+    if (q) setSearchTerm(q)
+  }, [location.search])
 
   const addMutation = useMutation({
     mutationFn: (payload) => api.post('/admin/courses', payload).then(r => r.data),
