@@ -15,13 +15,75 @@ use App\Models\QuizAnswer;
 
 // Minimal API: health/test endpoint only (portfolio-friendly)
 Route::get('/test', function () {
-    return response()->json([
-        'message' => 'API is working!',
-        'timestamp' => date('c'),
-    ]);
+    try {
+        return response()->json([
+            'message' => 'API is working!',
+            'timestamp' => date('c'),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'environment' => app()->environment(),
+            'debug_mode' => config('app.debug'),
+            'database_connection' => config('database.default'),
+            'cache_driver' => config('cache.default'),
+            'session_driver' => config('session.driver'),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Health check failed',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Enable debug for trace'
+        ], 500);
+    }
 });
 
-// GET /student/courses/{courseId}/progress - get progress for demo student in a course
+// Debug endpoint for troubleshooting
+Route::get('/debug', function () {
+    try {
+        $dbTest = null;
+        try {
+            \DB::connection()->getPdo();
+            $dbTest = 'connected';
+        } catch (\Exception $e) {
+            $dbTest = 'failed: ' . $e->getMessage();
+        }
+        
+        return response()->json([
+            'status' => 'debug_info',
+            'timestamp' => now()->toIso8601String(),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+            'environment' => app()->environment(),
+            'app_key' => config('app.key') ? 'set' : 'missing',
+            'database' => [
+                'default' => config('database.default'),
+                'host' => config('database.connections.pgsql.host'),
+                'port' => config('database.connections.pgsql.port'),
+                'database' => config('database.connections.pgsql.database'),
+                'username' => config('database.connections.pgsql.username') ? 'set' : 'missing',
+                'password' => config('database.connections.pgsql.password') ? 'set' : 'missing',
+                'connection_test' => $dbTest
+            ],
+            'extensions' => [
+                'pdo_pgsql' => extension_loaded('pdo_pgsql'),
+                'mbstring' => extension_loaded('mbstring'),
+                'bcmath' => extension_loaded('bcmath')
+            ],
+            'directories' => [
+                'storage_writable' => is_writable(storage_path()),
+                'cache_writable' => is_writable(storage_path('framework/cache'))
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Debug endpoint failed',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
 Route::get('/student/courses/{courseId}/progress', function ($courseId) {
     $student = ensureDemoStudent();
     $course = Course::findOrFail($courseId);

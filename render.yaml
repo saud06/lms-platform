@@ -70,9 +70,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Manual backend URL - will be updated after backend deployment
+      # Backend URL - using the actual service URL from Render
       - key: VITE_API_URL
-        value: https://lms-backend.onrender.com
+        value: https://lms-backend-thlg.onrender.com
 
 # Database
 databases:
