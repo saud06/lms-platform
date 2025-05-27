@@ -37,19 +37,10 @@ RUN chmod +x docker-entrypoint.sh
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Copy environment file
-RUN cp .env.example .env
-
-# Generate application key
-RUN php artisan key:generate --force
-
-# Generate JWT secret  
-RUN php artisan jwt:secret --force
-
-# Cache configuration
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
+# Cache configuration (will be regenerated at runtime)
+RUN php artisan config:clear || true
+RUN php artisan route:clear || true
+RUN php artisan view:clear || true
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
