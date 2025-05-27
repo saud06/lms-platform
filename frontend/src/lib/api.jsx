@@ -88,7 +88,9 @@ console.log('API Configuration:', {
   mockMode: MOCK_MODE,
   baseURL: getBaseURL(),
   environment: import.meta.env.MODE,
-  viteApiUrl: import.meta.env.VITE_API_URL
+  viteApiUrl: import.meta.env.VITE_API_URL,
+  isProduction: import.meta.env.PROD,
+  apiURL: import.meta.env.VITE_API_URL || 'NOT_SET'
 });
 
 // Only add interceptors for real axios instance

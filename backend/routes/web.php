@@ -17,7 +17,7 @@ Route::get('/', function () {
     return response()->json([
         'Laravel' => app()->version(),
         'message' => 'LMS Backend API is running',
-        'timestamp' => now()->toISOString()
+        'timestamp' => date('c')
     ]);
 });
 
