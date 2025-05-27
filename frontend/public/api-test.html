@@ -17,11 +17,23 @@
             results.innerHTML = '<p>Testing backend...</p>';
             
             try {
-                const response = await fetch(`${API_URL}/api/test`);
+                const response = await fetch(`${API_URL}/api/test`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 results.innerHTML = `<p><strong>✅ Backend Test:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre></p>`;
             } catch (error) {
-                results.innerHTML = `<p><strong>❌ Backend Test Failed:</strong><br>${error.message}</p>`;
+                results.innerHTML = `<p><strong>❌ Backend Test Failed:</strong><br>Error: ${error.message}<br>This might be a CORS issue.</p>`;
+                console.error('Backend test error:', error);
             }
         }
         
@@ -34,18 +46,25 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
                     },
+                    mode: 'cors',
                     body: JSON.stringify({
                         email: 'admin@example.com',
                         password: 'password'
                     })
                 });
                 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+                }
+                
                 const data = await response.json();
                 results.innerHTML = `<p><strong>✅ Login Test:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre></p>`;
             } catch (error) {
-                results.innerHTML = `<p><strong>❌ Login Test Failed:</strong><br>${error.message}</p>`;
+                results.innerHTML = `<p><strong>❌ Login Test Failed:</strong><br>Error: ${error.message}<br>This might be a CORS issue.</p>`;
+                console.error('Login test error:', error);
             }
         }
     </script>

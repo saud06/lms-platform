@@ -14,7 +14,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return ['Laravel' => app()->version()];
+    return response()->json([
+        'Laravel' => app()->version(),
+        'message' => 'LMS Backend API is running',
+        'timestamp' => now()->toISOString()
+    ]);
 });
 
 require __DIR__.'/auth.php';
