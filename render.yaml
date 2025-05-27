@@ -68,7 +68,6 @@ services:
     buildCommand: "npm ci && npm run build"
     staticPublishPath: ./dist
     plan: free
-    region: oregon
     branch: main
     envVars:
       - key: NODE_ENV
