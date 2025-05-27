@@ -81,6 +81,29 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Minimal system check that works even with basic issues
+Route::get('/debug/minimal-check', function () {
+    try {
+        return response()->json([
+            'status' => 'basic_php_working',
+            'php_version' => PHP_VERSION,
+            'timestamp' => date('c'),
+            'memory_limit' => ini_get('memory_limit'),
+            'max_execution_time' => ini_get('max_execution_time'),
+            'error_reporting' => error_reporting(),
+            'display_errors' => ini_get('display_errors')
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'critical_error',
+            'error' => $e->getMessage(),
+            'type' => get_class($e),
+            'file' => basename($e->getFile()),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
 // Comprehensive system diagnostic endpoint
 Route::get('/debug/system-status', function () {
     $diagnostics = [];

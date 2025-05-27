@@ -140,19 +140,76 @@
         }
 
         async function runSystemDiagnostics() {
+            const backendURL = getBackendURL();
+            
+            // Step 1: Try minimal check first
+            document.getElementById('user-check-result').innerHTML = 
+                `<div class="info">🔧 Running basic system check...</div>`;
+            
             try {
-                const backendURL = getBackendURL();
-                const diagnosticsURL = `${backendURL}/debug/system-status`;
+                const minimalURL = `${backendURL}/debug/minimal-check`;
+                const minimalResponse = await fetch(minimalURL, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
                 
-                document.getElementById('user-check-result').innerHTML = 
-                    `<div class="info">🔧 Running system diagnostics at: ${diagnosticsURL}</div>`;
-
+                if (minimalResponse.ok) {
+                    const minimalData = await minimalResponse.json();
+                    
+                    let html = `<div class="success">✅ Basic PHP/Laravel is working!</div>`;
+                    html += `<div class="info">
+                        <strong>Basic System Info:</strong><br>
+                        PHP: ${minimalData.php_version}<br>
+                        Memory Limit: ${minimalData.memory_limit}<br>
+                        Max Execution Time: ${minimalData.max_execution_time}s<br>
+                        Error Reporting: ${minimalData.error_reporting}
+                    </div>`;
+                    
+                    // Now try comprehensive diagnostics
+                    html += `<div class="info">🔧 Running comprehensive diagnostics...</div>`;
+                    document.getElementById('user-check-result').innerHTML = html;
+                    
+                    // Step 2: Try comprehensive diagnostics
+                    await runComprehensiveDiagnostics(backendURL, html);
+                    
+                } else {
+                    const errorText = await minimalResponse.text();
+                    throw new Error(`HTTP ${minimalResponse.status}: ${errorText.substring(0, 200)}`);
+                }
+                
+            } catch (error) {
+                // Even basic check failed - this is critical
+                let html = `<div class="error">❌ Basic system check failed: ${error.message}</div>`;
+                
+                html += `<div class="error">
+                    <strong>🚨 Critical Backend Issues:</strong><br>
+                    • Backend service may be down or crashing<br>
+                    • PHP syntax errors preventing execution<br>
+                    • Missing critical Laravel dependencies<br>
+                    • Memory or resource limits exceeded<br>
+                    • Environment configuration problems<br><br>
+                    <strong>Immediate Actions:</strong><br>
+                    • Check Render deployment logs<br>
+                    • Verify backend service is running<br>
+                    • Check for PHP/Laravel errors in logs
+                </div>`;
+                
+                html += `<div class="info">
+                    <strong>Testing Basic Connectivity:</strong><br>
+                    Trying: ${backendURL}/debug/minimal-check<br>
+                    Error: ${error.message}
+                </div>`;
+                
+                document.getElementById('user-check-result').innerHTML = html;
+            }
+        }
+        
+        async function runComprehensiveDiagnostics(backendURL, existingHtml) {
+            try {
+                const diagnosticsURL = `${backendURL}/debug/system-status`;
                 const response = await fetch(diagnosticsURL, {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 if (!response.ok) {
@@ -161,17 +218,8 @@
 
                 const data = await response.json();
                 
-                let html = `<div class="${data.summary.critical_errors ? 'error' : 'success'}">
-                    🔧 System Diagnostics ${data.summary.critical_errors ? 'Found Issues' : 'All Good'}
-                </div>`;
-                
-                // System info
-                html += `<div class="info">
-                    <strong>System Info:</strong><br>
-                    PHP: ${data.diagnostics.system.php_version}<br>
-                    Laravel: ${data.diagnostics.system.laravel_version}<br>
-                    Environment: ${data.diagnostics.system.environment}<br>
-                    App Key: ${data.diagnostics.system.app_key}
+                let html = existingHtml + `<div class="${data.summary.critical_errors ? 'error' : 'success'}">
+                    🔧 Comprehensive Diagnostics ${data.summary.critical_errors ? 'Found Issues' : 'All Good'}
                 </div>`;
                 
                 // Database info
@@ -216,26 +264,6 @@
                 }
                 html += `</div>`;
                 
-                // Extensions
-                const ext = data.diagnostics.extensions;
-                const missingExt = Object.keys(ext).filter(key => !ext[key]);
-                html += `<div class="${missingExt.length === 0 ? 'success' : 'warning'}">
-                    <strong>PHP Extensions:</strong><br>`;
-                Object.keys(ext).forEach(key => {
-                    html += `${key}: ${ext[key] ? '✅' : '❌'} `;
-                });
-                html += `</div>`;
-                
-                // Permissions
-                const perms = data.diagnostics.permissions;
-                const permIssues = Object.keys(perms).filter(key => !perms[key]);
-                html += `<div class="${permIssues.length === 0 ? 'success' : 'warning'}">
-                    <strong>File Permissions:</strong><br>`;
-                Object.keys(perms).forEach(key => {
-                    html += `${key}: ${perms[key] ? '✅' : '❌'}<br>`;
-                });
-                html += `</div>`;
-                
                 if (data.summary.critical_errors) {
                     html += `<div class="error">
                         <strong>🚨 Critical Issues Found!</strong><br>
@@ -257,12 +285,11 @@
                 document.getElementById('user-check-result').innerHTML = html;
                 
             } catch (error) {
-                document.getElementById('user-check-result').innerHTML = 
-                    `<div class="error">❌ System diagnostics failed: ${error.message}<br><br>
-                    This could indicate:<br>
-                    • Backend is not running<br>
-                    • API endpoint doesn't exist<br>
-                    • Network connectivity issues</div>`;
+                let html = existingHtml + `<div class="warning">⚠️ Comprehensive diagnostics failed: ${error.message}<br><br>
+                Basic system works, but advanced features have issues.<br>
+                This suggests database or model problems.</div>`;
+                
+                document.getElementById('user-check-result').innerHTML = html;
             }
         }
 
