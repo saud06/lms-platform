@@ -81,6 +81,61 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Simple manual user creation for immediate testing
+Route::post('/debug/create-admin', function (Request $request) {
+    try {
+        // Check if admin already exists
+        $existingAdmin = User::where('email', 'admin@lmsplatform.com')->first();
+        if ($existingAdmin) {
+            return response()->json([
+                'status' => 'exists',
+                'message' => 'Admin user already exists',
+                'user' => [
+                    'id' => $existingAdmin->id,
+                    'name' => $existingAdmin->name,
+                    'email' => $existingAdmin->email,
+                    'role' => $existingAdmin->role
+                ]
+            ]);
+        }
+        
+        // Create admin user directly
+        $admin = User::create([
+            'name' => 'System Administrator',
+            'email' => 'admin@lmsplatform.com',
+            'password' => Hash::make('AdminPass123!'),
+            'role' => User::ROLE_ADMIN,
+            'bio' => 'System Administrator',
+            'phone' => '+1-000-000-0000',
+            'is_active' => true,
+        ]);
+        
+        return response()->json([
+            'status' => 'created',
+            'message' => 'Admin user created successfully!',
+            'user' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
+                'role' => $admin->role
+            ],
+            'credentials' => [
+                'email' => 'admin@lmsplatform.com',
+                'password' => 'AdminPass123!'
+            ],
+            'timestamp' => now()->toIso8601String()
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to create admin user: ' . $e->getMessage(),
+            'error_type' => get_class($e),
+            'timestamp' => now()->toIso8601String()
+        ], 500);
+    }
+});
+
 // Manual database seeding endpoint for production
 Route::post('/debug/seed-database', function (Request $request) {
     try {

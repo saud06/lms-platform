@@ -79,6 +79,7 @@
             <button onclick="checkUsers()">Check Available Users</button>
             <button onclick="seedDatabase(false)" style="background-color: #28a745;">🌱 Seed Database</button>
             <button onclick="seedDatabase(true)" style="background-color: #dc3545;">⚠️ Force Seed (Add More Users)</button>
+            <button onclick="createAdminQuickly()" style="background-color: #ff6b35;">⚡ Quick Fix: Create Admin Only</button>
             <div id="user-check-result"></div>
         </div>
 
@@ -135,6 +136,79 @@
                 return `${viteApiUrl}/api`;
             }
             return '/api'; // Development fallback
+        }
+
+        async function createAdminQuickly() {
+            try {
+                const backendURL = getBackendURL();
+                const createURL = `${backendURL}/debug/create-admin`;
+                
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">⚡ Creating admin user at: ${createURL}</div>`;
+
+                const response = await fetch(createURL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.status === 'created') {
+                        let html = `<div class="success">✅ Admin user created successfully!</div>`;
+                        
+                        html += `
+                            <div class="user-card">
+                                <strong>${data.user.name}</strong> (${data.user.role})<br>
+                                Email: <code>${data.user.email}</code><br>
+                                ID: ${data.user.id}
+                            </div>
+                        `;
+                        
+                        html += `<div class="credentials">
+                            <h3>🔑 Login Credentials:</h3>
+                            <div class="user-card">
+                                <strong>Email:</strong> ${data.credentials.email}<br>
+                                <strong>Password:</strong> ${data.credentials.password}
+                            </div>
+                            <p><strong>You can now try logging in with these credentials!</strong></p>
+                        </div>`;
+                        
+                        document.getElementById('user-check-result').innerHTML = html;
+                    } else if (data.status === 'exists') {
+                        let html = `<div class="info">📝 Admin user already exists!</div>`;
+                        
+                        html += `
+                            <div class="user-card">
+                                <strong>${data.user.name}</strong> (${data.user.role})<br>
+                                Email: <code>${data.user.email}</code><br>
+                                ID: ${data.user.id}
+                            </div>
+                        `;
+                        
+                        html += `<div class="credentials">
+                            <h3>🔑 Try These Credentials:</h3>
+                            <div class="user-card">
+                                <strong>Email:</strong> admin@lmsplatform.com<br>
+                                <strong>Password:</strong> AdminPass123!
+                            </div>
+                        </div>`;
+                        
+                        document.getElementById('user-check-result').innerHTML = html;
+                    } else {
+                        document.getElementById('user-check-result').innerHTML = 
+                            `<div class="warning">⚠️ ${data.message || 'Unknown status'}</div>`;
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ Admin creation failed: ${error.message}</div>`;
+            }
         }
 
         async function seedDatabase(force = false) {
