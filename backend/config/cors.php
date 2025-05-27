@@ -26,9 +26,11 @@ return [
     ],
 
     'allowed_origins_patterns' => [
-        'https://*-lms-frontend.onrender.com',
-        'https://lms-frontend.onrender.com',
-        'https://*-lms-platform-frontend.onrender.com',
+        'https://*-lms-frontend*.onrender.com',
+        'https://lms-frontend*.onrender.com',
+        'https://*-lms-platform-frontend*.onrender.com',
+        'https://lms-platform-frontend*.onrender.com',
+        'https://*frontend*.onrender.com',
     ],
 
     'allowed_headers' => ['*'],
