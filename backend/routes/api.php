@@ -84,13 +84,28 @@ Route::post('/test/login', function (Request $request) {
 // Manual database seeding endpoint for production
 Route::post('/debug/seed-database', function (Request $request) {
     try {
-        // Security check - only allow if no users exist
-        $userCount = User::count();
-        if ($userCount > 0) {
+        // Check database connection first
+        \DB::connection()->getPdo();
+        
+        // Get user count with multiple methods for verification
+        $userCountEloquent = User::count();
+        $userCountRaw = \DB::table('users')->count();
+        $existingUsers = User::select('id', 'name', 'email', 'role')->take(5)->get();
+        
+        // Check for force parameter
+        $force = $request->input('force', false);
+        
+        if (!$force && ($userCountEloquent > 0 || $userCountRaw > 0)) {
             return response()->json([
                 'status' => 'skipped',
                 'message' => 'Database already has users, seeding skipped for safety',
-                'user_count' => $userCount
+                'user_counts' => [
+                    'eloquent' => $userCountEloquent,
+                    'raw_query' => $userCountRaw
+                ],
+                'existing_users_sample' => $existingUsers,
+                'suggestion' => 'Use force=true parameter to seed anyway (this will add more users)',
+                'timestamp' => now()->toIso8601String()
             ]);
         }
         
@@ -175,8 +190,10 @@ Route::get('/debug/users', function () {
         // Check if database connection works
         \DB::connection()->getPdo();
         
-        // Get user count
-        $userCount = User::count();
+        // Get user count with multiple methods
+        $userCountEloquent = User::count();
+        $userCountRaw = \DB::table('users')->count();
+        $userCountSql = \DB::select('SELECT COUNT(*) as count FROM users')[0]->count;
         
         // Get users with limited info (no passwords)
         $users = User::select('id', 'name', 'email', 'role', 'is_active', 'created_at')
@@ -184,15 +201,32 @@ Route::get('/debug/users', function () {
                     ->take(20) // Limit to 20 users for safety
                     ->get();
         
+        // Check table existence
+        $tablesExist = [
+            'users' => \DB::select("SELECT to_regclass('public.users') as exists")[0]->exists !== null,
+            'migrations' => \DB::select("SELECT to_regclass('public.migrations') as exists")[0]->exists !== null
+        ];
+        
         return response()->json([
             'status' => 'success',
-            'total_users' => $userCount,
+            'user_counts' => [
+                'eloquent' => $userCountEloquent,
+                'raw_query' => $userCountRaw,
+                'sql_direct' => (int)$userCountSql
+            ],
             'sample_users' => $users,
+            'tables_exist' => $tablesExist,
             'timestamp' => now()->toIso8601String(),
             'database_info' => [
                 'connection' => config('database.default'),
                 'host' => config('database.connections.pgsql.host'),
-                'database' => config('database.connections.pgsql.database')
+                'database' => config('database.connections.pgsql.database'),
+                'port' => config('database.connections.pgsql.port')
+            ],
+            'debug_info' => [
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'environment' => app()->environment()
             ]
         ]);
     } catch (\Exception $e) {
@@ -200,6 +234,8 @@ Route::get('/debug/users', function () {
             'status' => 'error',
             'message' => $e->getMessage(),
             'error_type' => get_class($e),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile()),
             'timestamp' => now()->toIso8601String()
         ], 500);
     }

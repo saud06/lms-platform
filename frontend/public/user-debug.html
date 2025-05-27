@@ -77,7 +77,8 @@
         <div class="test-section">
             <h2>🔍 Database User Check</h2>
             <button onclick="checkUsers()">Check Available Users</button>
-            <button onclick="seedDatabase()" style="background-color: #28a745;">🌱 Seed Database</button>
+            <button onclick="seedDatabase(false)" style="background-color: #28a745;">🌱 Seed Database</button>
+            <button onclick="seedDatabase(true)" style="background-color: #dc3545;">⚠️ Force Seed (Add More Users)</button>
             <div id="user-check-result"></div>
         </div>
 
@@ -136,20 +137,21 @@
             return '/api'; // Development fallback
         }
 
-        async function seedDatabase() {
+        async function seedDatabase(force = false) {
             try {
                 const backendURL = getBackendURL();
                 const seedURL = `${backendURL}/debug/seed-database`;
                 
                 document.getElementById('user-check-result').innerHTML = 
-                    `<div class="info">🌱 Seeding database at: ${seedURL}</div>`;
+                    `<div class="info">🌱 ${force ? 'Force ' : ''}Seeding database at: ${seedURL}</div>`;
 
                 const response = await fetch(seedURL, {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ force: force })
                 });
 
                 const data = await response.json();
@@ -182,9 +184,34 @@
                         </div>`;
                         
                         document.getElementById('user-check-result').innerHTML = html;
+                    } else if (data.status === 'skipped') {
+                        let html = `<div class="warning">⚠️ ${data.message}</div>`;
+                        
+                        if (data.user_counts) {
+                            html += `<div class="info">
+                                <strong>User Counts:</strong><br>
+                                Eloquent: ${data.user_counts.eloquent}<br>
+                                Raw Query: ${data.user_counts.raw_query}
+                            </div>`;
+                        }
+                        
+                        if (data.existing_users_sample && data.existing_users_sample.length > 0) {
+                            html += `<div class="info">
+                                <strong>Existing Users (sample):</strong><br>`;
+                            data.existing_users_sample.forEach(user => {
+                                html += `${user.name} (${user.email}) - ${user.role}<br>`;
+                            });
+                            html += `</div>`;
+                        }
+                        
+                        if (data.suggestion) {
+                            html += `<div class="warning"><strong>Suggestion:</strong> ${data.suggestion}</div>`;
+                        }
+                        
+                        document.getElementById('user-check-result').innerHTML = html;
                     } else {
                         document.getElementById('user-check-result').innerHTML = 
-                            `<div class="warning">⚠️ ${data.message}</div>`;
+                            `<div class="warning">⚠️ ${data.message || 'Unknown status'}</div>`;
                     }
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -230,22 +257,59 @@
         }
 
         function displayUsers(data) {
-            if (data.users && data.users.length > 0) {
-                let html = `<div class="success">✅ Found ${data.users.length} users in database:</div>`;
-                data.users.forEach(user => {
+            let html = '';
+            
+            // Show user counts
+            if (data.user_counts) {
+                const counts = data.user_counts;
+                const consistent = counts.eloquent === counts.raw_query && counts.eloquent === counts.sql_direct;
+                
+                html += `<div class="${consistent ? 'success' : 'warning'}">
+                    <strong>User Counts:</strong><br>
+                    Eloquent ORM: ${counts.eloquent}<br>
+                    Raw Query: ${counts.raw_query}<br>
+                    Direct SQL: ${counts.sql_direct}<br>
+                    ${consistent ? '✅ All methods consistent' : '⚠️ Inconsistent counts detected!'}
+                </div>`;
+            }
+            
+            // Show table existence
+            if (data.tables_exist) {
+                html += `<div class="info">
+                    <strong>Database Tables:</strong><br>
+                    Users table: ${data.tables_exist.users ? '✅ Exists' : '❌ Missing'}<br>
+                    Migrations table: ${data.tables_exist.migrations ? '✅ Exists' : '❌ Missing'}
+                </div>`;
+            }
+            
+            // Show users if any
+            if (data.sample_users && data.sample_users.length > 0) {
+                html += `<div class="success">✅ Found ${data.sample_users.length} users in database:</div>`;
+                data.sample_users.forEach(user => {
                     html += `
                         <div class="user-card">
                             <strong>${user.name}</strong> (${user.role})<br>
                             Email: <code>${user.email}</code><br>
-                            Active: ${user.is_active ? 'Yes' : 'No'}
+                            Active: ${user.is_active ? 'Yes' : 'No'}<br>
+                            Created: ${new Date(user.created_at).toLocaleString()}
                         </div>
                     `;
                 });
-                document.getElementById('user-check-result').innerHTML = html;
             } else {
-                document.getElementById('user-check-result').innerHTML = 
-                    `<div class="warning">⚠️ No users found in database. The database might not be seeded properly.</div>`;
+                html += `<div class="warning">⚠️ No users found in database sample.</div>`;
             }
+            
+            // Show debug info
+            if (data.debug_info) {
+                html += `<div class="info">
+                    <strong>System Info:</strong><br>
+                    PHP: ${data.debug_info.php_version}<br>
+                    Laravel: ${data.debug_info.laravel_version}<br>
+                    Environment: ${data.debug_info.environment}
+                </div>`;
+            }
+            
+            document.getElementById('user-check-result').innerHTML = html;
         }
 
         async function testLogin(email, password) {
