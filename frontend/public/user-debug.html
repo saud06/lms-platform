@@ -80,6 +80,7 @@
             <button onclick="seedDatabase(false)" style="background-color: #28a745;">🌱 Seed Database</button>
             <button onclick="seedDatabase(true)" style="background-color: #dc3545;">⚠️ Force Seed (Add More Users)</button>
             <button onclick="createAdminQuickly()" style="background-color: #ff6b35;">⚡ Quick Fix: Create Admin Only</button>
+            <button onclick="runSystemDiagnostics()" style="background-color: #6f42c1;">🔧 System Diagnostics</button>
             <div id="user-check-result"></div>
         </div>
 
@@ -136,6 +137,133 @@
                 return `${viteApiUrl}/api`;
             }
             return '/api'; // Development fallback
+        }
+
+        async function runSystemDiagnostics() {
+            try {
+                const backendURL = getBackendURL();
+                const diagnosticsURL = `${backendURL}/debug/system-status`;
+                
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">🔧 Running system diagnostics at: ${diagnosticsURL}</div>`;
+
+                const response = await fetch(diagnosticsURL, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                let html = `<div class="${data.summary.critical_errors ? 'error' : 'success'}">
+                    🔧 System Diagnostics ${data.summary.critical_errors ? 'Found Issues' : 'All Good'}
+                </div>`;
+                
+                // System info
+                html += `<div class="info">
+                    <strong>System Info:</strong><br>
+                    PHP: ${data.diagnostics.system.php_version}<br>
+                    Laravel: ${data.diagnostics.system.laravel_version}<br>
+                    Environment: ${data.diagnostics.system.environment}<br>
+                    App Key: ${data.diagnostics.system.app_key}
+                </div>`;
+                
+                // Database info
+                const db = data.diagnostics.database;
+                html += `<div class="${db.connection === 'success' ? 'success' : 'error'}">
+                    <strong>Database:</strong><br>
+                    Connection: ${db.connection}<br>`;
+                if (db.connection === 'success') {
+                    html += `Host: ${db.host}<br>
+                    Database: ${db.database}<br>
+                    Users Table: ${db.users_table_exists ? '✅ Exists' : '❌ Missing'}<br>
+                    User Count: ${db.user_count || 0}`;
+                } else {
+                    html += `Error: ${db.error || 'Unknown error'}`;
+                }
+                html += `</div>`;
+                
+                // User model info
+                const models = data.diagnostics.models;
+                html += `<div class="${models.user_class_exists ? 'success' : 'error'}">
+                    <strong>User Model:</strong><br>
+                    Class Exists: ${models.user_class_exists ? '✅ Yes' : '❌ No'}<br>`;
+                if (models.user_constants) {
+                    html += `Constants: ${models.user_constants.join(', ')}<br>`;
+                }
+                if (models.fillable) {
+                    html += `Fillable Fields: ${models.fillable.join(', ')}`;
+                }
+                if (models.user_model_error) {
+                    html += `Error: ${models.user_model_error}`;
+                }
+                html += `</div>`;
+                
+                // Security info
+                const security = data.diagnostics.security;
+                html += `<div class="${security.hash_works ? 'success' : 'error'}">
+                    <strong>Security:</strong><br>
+                    Hash Function: ${security.hash_works ? '✅ Working' : '❌ Failed'}<br>
+                    Hash Verification: ${security.hash_verify ? '✅ Working' : '❌ Failed'}`;
+                if (security.hash_error) {
+                    html += `<br>Error: ${security.hash_error}`;
+                }
+                html += `</div>`;
+                
+                // Extensions
+                const ext = data.diagnostics.extensions;
+                const missingExt = Object.keys(ext).filter(key => !ext[key]);
+                html += `<div class="${missingExt.length === 0 ? 'success' : 'warning'}">
+                    <strong>PHP Extensions:</strong><br>`;
+                Object.keys(ext).forEach(key => {
+                    html += `${key}: ${ext[key] ? '✅' : '❌'} `;
+                });
+                html += `</div>`;
+                
+                // Permissions
+                const perms = data.diagnostics.permissions;
+                const permIssues = Object.keys(perms).filter(key => !perms[key]);
+                html += `<div class="${permIssues.length === 0 ? 'success' : 'warning'}">
+                    <strong>File Permissions:</strong><br>`;
+                Object.keys(perms).forEach(key => {
+                    html += `${key}: ${perms[key] ? '✅' : '❌'}<br>`;
+                });
+                html += `</div>`;
+                
+                if (data.summary.critical_errors) {
+                    html += `<div class="error">
+                        <strong>🚨 Critical Issues Found!</strong><br>
+                        Please check the red sections above. Common fixes:<br>
+                        • Database connection issues<br>
+                        • Missing users table (run migrations)<br>
+                        • User model problems<br>
+                        • Hash function failures
+                    </div>`;
+                } else {
+                    html += `<div class="success">
+                        ✅ System looks healthy! If you're still having issues, they might be related to:<br>
+                        • Specific user data<br>
+                        • Authentication logic<br>
+                        • Frontend-backend communication
+                    </div>`;
+                }
+                
+                document.getElementById('user-check-result').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ System diagnostics failed: ${error.message}<br><br>
+                    This could indicate:<br>
+                    • Backend is not running<br>
+                    • API endpoint doesn't exist<br>
+                    • Network connectivity issues</div>`;
+            }
         }
 
         async function createAdminQuickly() {

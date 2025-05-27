@@ -81,9 +81,123 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Comprehensive system diagnostic endpoint
+Route::get('/debug/system-status', function () {
+    $diagnostics = [];
+    
+    // Test 1: PHP and Laravel basics
+    $diagnostics['system'] = [
+        'php_version' => PHP_VERSION,
+        'laravel_version' => app()->version(),
+        'environment' => app()->environment(),
+        'debug_mode' => config('app.debug'),
+        'app_key' => config('app.key') ? 'set' : 'missing',
+        'timestamp' => now()->toIso8601String()
+    ];
+    
+    // Test 2: Database connectivity
+    try {
+        \DB::connection()->getPdo();
+        $diagnostics['database']['connection'] = 'success';
+        $diagnostics['database']['driver'] = config('database.default');
+        $diagnostics['database']['host'] = config('database.connections.pgsql.host');
+        $diagnostics['database']['database'] = config('database.connections.pgsql.database');
+    } catch (\Exception $e) {
+        $diagnostics['database']['connection'] = 'failed';
+        $diagnostics['database']['error'] = $e->getMessage();
+    }
+    
+    // Test 3: Check if users table exists and structure
+    try {
+        $tableExists = \DB::select("SELECT to_regclass('public.users') as exists")[0]->exists !== null;
+        $diagnostics['database']['users_table_exists'] = $tableExists;
+        
+        if ($tableExists) {
+            $columns = \DB::select("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users' AND table_schema = 'public' ORDER BY ordinal_position");
+            $diagnostics['database']['users_table_columns'] = $columns;
+            
+            $userCount = \DB::table('users')->count();
+            $diagnostics['database']['user_count'] = $userCount;
+        }
+    } catch (\Exception $e) {
+        $diagnostics['database']['table_check_error'] = $e->getMessage();
+    }
+    
+    // Test 4: Check User model
+    try {
+        $diagnostics['models']['user_class_exists'] = class_exists(User::class);
+        if (class_exists(User::class)) {
+            $reflector = new \ReflectionClass(User::class);
+            $constants = $reflector->getConstants();
+            $diagnostics['models']['user_constants'] = array_keys($constants);
+            $diagnostics['models']['fillable'] = (new User())->getFillable();
+        }
+    } catch (\Exception $e) {
+        $diagnostics['models']['user_model_error'] = $e->getMessage();
+    }
+    
+    // Test 5: Check Hash functionality
+    try {
+        $testHash = Hash::make('test123');
+        $diagnostics['security']['hash_works'] = !empty($testHash);
+        $diagnostics['security']['hash_verify'] = Hash::check('test123', $testHash);
+    } catch (\Exception $e) {
+        $diagnostics['security']['hash_error'] = $e->getMessage();
+    }
+    
+    // Test 6: Check required extensions
+    $diagnostics['extensions'] = [
+        'pdo_pgsql' => extension_loaded('pdo_pgsql'),
+        'mbstring' => extension_loaded('mbstring'),
+        'bcmath' => extension_loaded('bcmath'),
+        'openssl' => extension_loaded('openssl'),
+        'tokenizer' => extension_loaded('tokenizer')
+    ];
+    
+    // Test 7: Check file permissions
+    $diagnostics['permissions'] = [
+        'storage_writable' => is_writable(storage_path()),
+        'bootstrap_cache_writable' => is_writable(bootstrap_path('cache')),
+        'storage_logs_writable' => is_writable(storage_path('logs'))
+    ];
+    
+    return response()->json([
+        'status' => 'diagnostic_complete',
+        'diagnostics' => $diagnostics,
+        'summary' => [
+            'critical_errors' => (
+                ($diagnostics['database']['connection'] ?? '') !== 'success' ||
+                !($diagnostics['database']['users_table_exists'] ?? false) ||
+                !($diagnostics['models']['user_class_exists'] ?? false) ||
+                !($diagnostics['security']['hash_works'] ?? false)
+            ),
+            'recommendation' => 'Check critical_errors flag and individual test results'
+        ]
+    ]);
+});
+
 // Simple manual user creation for immediate testing
 Route::post('/debug/create-admin', function (Request $request) {
     try {
+        // First, test basic database connectivity
+        \DB::connection()->getPdo();
+        
+        // Check if User model and constants exist
+        if (!class_exists(User::class)) {
+            throw new \Exception('User model not found');
+        }
+        
+        // Check if role constants are defined
+        $adminRole = null;
+        if (defined('App\\Models\\User::ROLE_ADMIN')) {
+            $adminRole = User::ROLE_ADMIN;
+        } elseif (method_exists(User::class, 'ROLE_ADMIN')) {
+            $adminRole = User::ROLE_ADMIN;
+        } else {
+            // Fallback to string
+            $adminRole = 'admin';
+        }
+        
         // Check if admin already exists
         $existingAdmin = User::where('email', 'admin@lmsplatform.com')->first();
         if ($existingAdmin) {
@@ -95,20 +209,39 @@ Route::post('/debug/create-admin', function (Request $request) {
                     'name' => $existingAdmin->name,
                     'email' => $existingAdmin->email,
                     'role' => $existingAdmin->role
+                ],
+                'debug_info' => [
+                    'admin_role_used' => $adminRole,
+                    'user_table_exists' => \DB::select("SELECT to_regclass('public.users') as exists")[0]->exists !== null
                 ]
             ]);
         }
         
-        // Create admin user directly
-        $admin = User::create([
+        // Create admin user with error handling for each step
+        $userData = [
             'name' => 'System Administrator',
             'email' => 'admin@lmsplatform.com',
             'password' => Hash::make('AdminPass123!'),
-            'role' => User::ROLE_ADMIN,
-            'bio' => 'System Administrator',
-            'phone' => '+1-000-000-0000',
+            'role' => $adminRole,
             'is_active' => true,
-        ]);
+        ];
+        
+        // Add optional fields if they exist in the migration
+        try {
+            $columns = \DB::select("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND table_schema = 'public'");
+            $columnNames = array_column($columns, 'column_name');
+            
+            if (in_array('bio', $columnNames)) {
+                $userData['bio'] = 'System Administrator';
+            }
+            if (in_array('phone', $columnNames)) {
+                $userData['phone'] = '+1-000-000-0000';
+            }
+        } catch (\Exception $e) {
+            // Continue without optional fields
+        }
+        
+        $admin = User::create($userData);
         
         return response()->json([
             'status' => 'created',
@@ -123,6 +256,11 @@ Route::post('/debug/create-admin', function (Request $request) {
                 'email' => 'admin@lmsplatform.com',
                 'password' => 'AdminPass123!'
             ],
+            'debug_info' => [
+                'admin_role_used' => $adminRole,
+                'user_table_columns' => isset($columnNames) ? $columnNames : 'could_not_check',
+                'hash_function_available' => function_exists('password_hash')
+            ],
             'timestamp' => now()->toIso8601String()
         ]);
         
@@ -131,6 +269,17 @@ Route::post('/debug/create-admin', function (Request $request) {
             'status' => 'error',
             'message' => 'Failed to create admin user: ' . $e->getMessage(),
             'error_type' => get_class($e),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile()),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Enable debug for trace',
+            'debug_info' => [
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'environment' => app()->environment(),
+                'database_connection' => config('database.default'),
+                'user_model_exists' => class_exists(User::class),
+                'hash_class_exists' => class_exists(Hash::class)
+            ],
             'timestamp' => now()->toIso8601String()
         ], 500);
     }
