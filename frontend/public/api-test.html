@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>LMS API Test</h1>
+    <button onclick="testBackend()">Test Backend API</button>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="results"></div>
+    
+    <script>
+        const API_URL = 'https://lms-backend-thlg.onrender.com';
+        
+        async function testBackend() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing backend...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                results.innerHTML = `<p><strong>✅ Backend Test:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre></p>`;
+            } catch (error) {
+                results.innerHTML = `<p><strong>❌ Backend Test Failed:</strong><br>${error.message}</p>`;
+            }
+        }
+        
+        async function testLogin() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing login...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@example.com',
+                        password: 'password'
+                    })
+                });
+                
+                const data = await response.json();
+                results.innerHTML = `<p><strong>✅ Login Test:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre></p>`;
+            } catch (error) {
+                results.innerHTML = `<p><strong>❌ Login Test Failed:</strong><br>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
