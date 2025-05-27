@@ -3,6 +3,7 @@ services:
   - type: web
     name: lms-backend
     env: docker
+    rootDir: ./backend
     plan: free
     region: oregon
     branch: main
@@ -60,10 +61,12 @@ services:
         generateValue: true
 
   # Frontend React Application (Static Site)
-  - type: static
+  - type: web
     name: lms-frontend
+    env: static
+    rootDir: ./frontend
     buildCommand: "npm ci && npm run build"
-    publishPath: ./dist
+    staticPublishPath: ./dist
     envVars:
       - key: NODE_ENV
         value: production
