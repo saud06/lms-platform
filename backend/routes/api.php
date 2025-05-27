@@ -81,6 +81,42 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Debug endpoint for checking users in database
+Route::get('/debug/users', function () {
+    try {
+        // Check if database connection works
+        \DB::connection()->getPdo();
+        
+        // Get user count
+        $userCount = User::count();
+        
+        // Get users with limited info (no passwords)
+        $users = User::select('id', 'name', 'email', 'role', 'is_active', 'created_at')
+                    ->orderBy('created_at', 'desc')
+                    ->take(20) // Limit to 20 users for safety
+                    ->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'total_users' => $userCount,
+            'sample_users' => $users,
+            'timestamp' => now()->toIso8601String(),
+            'database_info' => [
+                'connection' => config('database.default'),
+                'host' => config('database.connections.pgsql.host'),
+                'database' => config('database.connections.pgsql.database')
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'error_type' => get_class($e),
+            'timestamp' => now()->toIso8601String()
+        ], 500);
+    }
+});
+
 // Debug endpoint for troubleshooting
 Route::get('/debug', function () {
     try {

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Account Debug - LMS Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #e9ecef;
+            font-size: 12px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .user-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .credentials {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #b8daff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 User Account Debug Tool</h1>
+        <p><strong>Purpose:</strong> Check what user accounts exist in the production database and provide login credentials.</p>
+        
+        <div class="test-section">
+            <h2>🔍 Database User Check</h2>
+            <button onclick="checkUsers()">Check Available Users</button>
+            <div id="user-check-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔐 Test Login with Known Credentials</h2>
+            <div class="credentials">
+                <h3>🎯 Expected Demo Accounts (from ProductionSeeder.php):</h3>
+                <div class="user-card">
+                    <strong>Admin Account:</strong><br>
+                    Email: <code>admin@lmsplatform.com</code><br>
+                    Password: <code>AdminPass123!</code><br>
+                    Role: Admin
+                </div>
+                <div class="user-card">
+                    <strong>Instructor Account:</strong><br>
+                    Email: <code>instructor@lmsplatform.com</code><br>
+                    Password: <code>InstructorPass123!</code><br>
+                    Role: Instructor
+                </div>
+                <div class="user-card">
+                    <strong>Student Account:</strong><br>
+                    Email: <code>student@lmsplatform.com</code><br>
+                    Password: <code>StudentPass123!</code><br>
+                    Role: Student
+                </div>
+            </div>
+            
+            <h3>Test Login:</h3>
+            <button onclick="testLogin('admin@lmsplatform.com', 'AdminPass123!')">Test Admin Login</button>
+            <button onclick="testLogin('instructor@lmsplatform.com', 'InstructorPass123!')">Test Instructor Login</button>
+            <button onclick="testLogin('student@lmsplatform.com', 'StudentPass123!')">Test Student Login</button>
+            
+            <div id="login-test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🛠️ Manual Login Test</h2>
+            <div>
+                <input type="email" id="manual-email" placeholder="Enter email" style="padding: 8px; margin: 5px; width: 250px;">
+                <input type="password" id="manual-password" placeholder="Enter password" style="padding: 8px; margin: 5px; width: 200px;">
+                <button onclick="testManualLogin()">Test Login</button>
+            </div>
+            <div id="manual-login-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get backend URL using the same logic as main app
+        function getBackendURL() {
+            const currentHostname = window.location.hostname;
+            const viteApiUrl = 'https://lms-backend-qn4t.onrender.com'; // From environment
+            
+            if (currentHostname.includes('onrender.com')) {
+                return `${viteApiUrl}/api`;
+            }
+            return '/api'; // Development fallback
+        }
+
+        async function checkUsers() {
+            try {
+                const backendURL = getBackendURL();
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">🔄 Checking users at: ${backendURL}/debug/users</div>`;
+
+                // Try a debug endpoint if it exists, otherwise try a simple health check
+                const response = await fetch(`${backendURL}/debug/users`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayUsers(data);
+                } else if (response.status === 404) {
+                    document.getElementById('user-check-result').innerHTML = 
+                        `<div class="warning">⚠️ Debug endpoint not available. This means we need to create one or the database might not be seeded properly.</div>`;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ Failed to check users: ${error.message}<br><br>
+                    This suggests either:<br>
+                    • Database hasn't been seeded with users<br>
+                    • Debug endpoint doesn't exist<br>
+                    • Backend connectivity issue</div>`;
+            }
+        }
+
+        function displayUsers(data) {
+            if (data.users && data.users.length > 0) {
+                let html = `<div class="success">✅ Found ${data.users.length} users in database:</div>`;
+                data.users.forEach(user => {
+                    html += `
+                        <div class="user-card">
+                            <strong>${user.name}</strong> (${user.role})<br>
+                            Email: <code>${user.email}</code><br>
+                            Active: ${user.is_active ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                });
+                document.getElementById('user-check-result').innerHTML = html;
+            } else {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="warning">⚠️ No users found in database. The database might not be seeded properly.</div>`;
+            }
+        }
+
+        async function testLogin(email, password) {
+            try {
+                const backendURL = getBackendURL();
+                const loginURL = `${backendURL}/login`;
+                
+                document.getElementById('login-test-result').innerHTML = 
+                    `<div class="info">🔄 Testing login for: ${email}</div>`;
+
+                const response = await fetch(loginURL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    document.getElementById('login-test-result').innerHTML = 
+                        `<div class="success">✅ Login successful!<br>
+                        User: ${data.user.name} (${data.user.role})<br>
+                        Token received: ${data.token.substring(0, 20)}...</div>`;
+                } else {
+                    document.getElementById('login-test-result').innerHTML = 
+                        `<div class="error">❌ Login failed: ${data.message || 'Invalid credentials'}<br>
+                        Response: <pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                document.getElementById('login-test-result').innerHTML = 
+                    `<div class="error">❌ Login test failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testManualLogin() {
+            const email = document.getElementById('manual-email').value;
+            const password = document.getElementById('manual-password').value;
+            
+            if (!email || !password) {
+                document.getElementById('manual-login-result').innerHTML = 
+                    `<div class="warning">⚠️ Please enter both email and password</div>`;
+                return;
+            }
+
+            try {
+                const backendURL = getBackendURL();
+                const loginURL = `${backendURL}/login`;
+                
+                document.getElementById('manual-login-result').innerHTML = 
+                    `<div class="info">🔄 Testing login for: ${email}</div>`;
+
+                const response = await fetch(loginURL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    document.getElementById('manual-login-result').innerHTML = 
+                        `<div class="success">✅ Login successful!<br>
+                        User: ${data.user.name} (${data.user.role})<br>
+                        Token received: ${data.token.substring(0, 20)}...</div>`;
+                } else {
+                    document.getElementById('manual-login-result').innerHTML = 
+                        `<div class="error">❌ Login failed: ${data.message || 'Invalid credentials'}<br>
+                        Status: ${response.status}<br>
+                        Response: <pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                document.getElementById('manual-login-result').innerHTML = 
+                    `<div class="error">❌ Login test failed: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
