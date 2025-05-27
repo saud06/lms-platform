@@ -38,6 +38,49 @@ Route::get('/test', function () {
     }
 });
 
+// Simple JSON response test
+Route::get('/test/json', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'JSON response test successful',
+        'timestamp' => now()->toIso8601String(),
+        'data' => [
+            'test_string' => 'Hello World',
+            'test_number' => 12345,
+            'test_boolean' => true,
+            'test_array' => [1, 2, 3],
+            'test_object' => ['key' => 'value']
+        ]
+    ]);
+});
+
+// Simple login test without cache or complex logic
+Route::post('/test/login', function (Request $request) {
+    \Log::info('Simple login test started');
+    
+    try {
+        return response()->json([
+            'success' => true,
+            'message' => 'Simple login test successful',
+            'user' => ['id' => 1, 'name' => 'Test User', 'role' => 'admin'],
+            'token' => 'test_token_123',
+            'timestamp' => now()->toIso8601String(),
+            'request_data' => $request->all()
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Simple login test failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toIso8601String()
+        ], 500);
+    }
+});
+
 // Debug endpoint for troubleshooting
 Route::get('/debug', function () {
     try {
@@ -403,9 +446,13 @@ Route::put('/admin/settings', function (Request $request) {
 // NOTE: For demo purposes only. Replace with real auth later.
 
 Route::post('/login', function (Request $request) {
+    // Force all errors to be logged and prevent silent failures
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
     try {
         // Log the request details for debugging
-        \Log::info('Login request received', [
+        \Log::info('=== Login Request Started ===', [
             'origin' => $request->header('Origin'),
             'host' => $request->header('Host'),
             'user_agent' => $request->header('User-Agent'),
@@ -413,13 +460,24 @@ Route::post('/login', function (Request $request) {
             'accept' => $request->header('Accept'),
             'ip' => $request->ip(),
             'method' => $request->method(),
+            'raw_input' => $request->getContent(),
             'timestamp' => now()->toIso8601String()
         ]);
+        
+        // Test basic response first
+        if ($request->has('test')) {
+            return response()->json([
+                'test' => 'basic response works',
+                'timestamp' => now()->toIso8601String()
+            ]);
+        }
         
         $data = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
+        
+        \Log::info('Validation passed', ['email' => $data['email']]);
 
         $users = [
             'admin@example.com' => ['id' => 1, 'name' => 'Admin User', 'role' => 'admin'],
@@ -436,63 +494,126 @@ Route::post('/login', function (Request $request) {
 
         if (!isset($users[$data['email']]) || $data['password'] !== 'password') {
             \Log::warning('Invalid login attempt', ['email' => $data['email']]);
-            return response()->json([
+            
+            $errorResponse = response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',
                 'timestamp' => now()->toIso8601String()
-            ], 401)->header('Access-Control-Allow-Origin', $request->header('Origin', '*'));
+            ], 401);
+            
+            if ($origin = $request->header('Origin')) {
+                $errorResponse->header('Access-Control-Allow-Origin', $origin);
+            }
+            
+            \Log::info('Sending error response', ['status' => 401]);
+            return $errorResponse;
         }
 
         $user = $users[$data['email']];
         $token = 'demo_token_'.md5($data['email'].'|'.microtime(true));
+        
+        \Log::info('User authenticated, generating response', [
+            'user' => $user,
+            'token_length' => strlen($token)
+        ]);
 
-        // Persist mapping token -> user for demo auth
-        Cache::put('auth:token:'.$token, $user, now()->addDays(7));
+        // Try to use cache, but don't fail if it doesn't work
+        try {
+            Cache::put('auth:token:'.$token, $user, now()->addDays(7));
+            \Log::info('Token cached successfully');
+        } catch (\Exception $cacheError) {
+            \Log::warning('Cache failed but continuing', [
+                'error' => $cacheError->getMessage()
+            ]);
+        }
 
-        \Log::info('Successful login', ['user' => $user, 'token' => substr($token, 0, 20) . '...']);
-
-        $response = response()->json([
+        \Log::info('Preparing JSON response');
+        
+        $responseData = [
             'success' => true,
             'message' => 'Login successful',
             'user' => $user,
             'token' => $token,
-            'timestamp' => now()->toIso8601String()
+            'timestamp' => now()->toIso8601String(),
+            'debug_info' => [
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'cache_driver' => config('cache.default'),
+                'response_generated_at' => now()->toIso8601String()
+            ]
+        ];
+        
+        \Log::info('Response data prepared', [
+            'data_keys' => array_keys($responseData),
+            'user_id' => $responseData['user']['id'],
+            'token_prefix' => substr($token, 0, 10) . '...',
         ]);
+        
+        $response = response()->json($responseData);
         
         // Add CORS headers explicitly
         $origin = $request->header('Origin');
         if ($origin) {
             $response->header('Access-Control-Allow-Origin', $origin);
+            \Log::info('Added CORS origin header', ['origin' => $origin]);
         }
         $response->header('Access-Control-Allow-Credentials', 'true');
+        
+        \Log::info('=== Login Response Ready ===', [
+            'status' => 200,
+            'has_content' => true,
+            'content_type' => 'application/json',
+            'timestamp' => now()->toIso8601String()
+        ]);
         
         return $response;
         
     } catch (\Illuminate\Validation\ValidationException $e) {
-        \Log::error('Login validation error', [
+        \Log::error('=== Login Validation Error ===', [
             'errors' => $e->errors(),
-            'input' => $request->all()
+            'input' => $request->all(),
+            'trace' => $e->getTraceAsString()
         ]);
-        return response()->json([
+        
+        $validationResponse = response()->json([
             'success' => false,
             'message' => 'Validation failed',
             'errors' => $e->errors(),
             'timestamp' => now()->toIso8601String()
-        ], 422)->header('Access-Control-Allow-Origin', $request->header('Origin', '*'));
+        ], 422);
+        
+        if ($origin = $request->header('Origin')) {
+            $validationResponse->header('Access-Control-Allow-Origin', $origin);
+        }
+        
+        return $validationResponse;
         
     } catch (\Exception $e) {
-        \Log::error('Login error', [
+        \Log::error('=== Login Critical Error ===', [
             'message' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
             'file' => $e->getFile(),
-            'line' => $e->getLine()
+            'line' => $e->getLine(),
+            'class' => get_class($e)
         ]);
-        return response()->json([
+        
+        $errorResponse = response()->json([
             'success' => false,
             'message' => 'Authentication system error',
             'error' => config('app.debug') ? $e->getMessage() : 'Internal error',
+            'debug_info' => config('app.debug') ? [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'class' => get_class($e)
+            ] : null,
             'timestamp' => now()->toIso8601String()
-        ], 500)->header('Access-Control-Allow-Origin', $request->header('Origin', '*'));
+        ], 500);
+        
+        if ($origin = $request->header('Origin')) {
+            $errorResponse->header('Access-Control-Allow-Origin', $origin);
+        }
+        
+        return $errorResponse;
     }
 });
 
