@@ -90,7 +90,7 @@ const getBaseURL = () => {
   const currentOrigin = hasWindow ? window.location.origin : '';
   const currentHref = hasWindow ? window.location.href : '';
   
-  console.log('=== API URL Detection v1.1.0 ===', {
+  console.log('=== API URL Detection v1.2.0 ===', {
     isDev,
     isProd,
     viteApiUrl,
@@ -102,52 +102,58 @@ const getBaseURL = () => {
     timestamp: new Date().toISOString()
   });
   
-  // RENDER DEPLOYMENT: Force backend URL for onrender.com deployments
-  if (hasWindow && currentHostname.includes('onrender.com')) {
-    console.log('=== RENDER DEPLOYMENT DETECTED ===');
-    
-    let backendUrl;
-    
-    // Strategy 1: Use VITE_API_URL if properly configured
-    if (viteApiUrl && viteApiUrl !== 'undefined' && viteApiUrl.includes('onrender.com')) {
-      backendUrl = `${viteApiUrl}/api`;
-      console.log('✅ Strategy 1 - Using VITE_API_URL:', backendUrl);
-      return backendUrl;
-    }
-    
-    // Strategy 2: Use the correct backend URL that matches your deployed services
-    // Frontend: https://lms-frontend-35zj.onrender.com
-    // Backend:  https://lms-backend-qn4t.onrender.com (actual deployed URLs)
-    if (currentHostname.includes('lms-frontend-35zj')) {
-      backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
-      console.log('✅ Strategy 2 - Using correct backend URL for lms-frontend-35zj:', backendUrl);
-      return backendUrl;
-    }
-    
-    // Strategy 3: Fallback to actual deployed backend URL
-    backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
-    console.log('✅ Strategy 3 - Using hardcoded backend URL from render.yaml:', backendUrl);
-    
-    return backendUrl;
-  }
-  
-  // DEVELOPMENT: Use Vite proxy
-  if (isDev) {
-    console.log('✅ DEVELOPMENT: Using development proxy: /api');
-    return '/api';
-  }
-  
-  // PRODUCTION: Other platforms
+  // PRODUCTION: Always use absolute URLs
   if (isProd) {
+    // RENDER DEPLOYMENT: Force backend URL for onrender.com deployments
+    if (hasWindow && currentHostname.includes('onrender.com')) {
+      console.log('=== RENDER DEPLOYMENT DETECTED ===');
+      
+      let backendUrl;
+      
+      // Strategy 1: Use VITE_API_URL if properly configured
+      if (viteApiUrl && viteApiUrl !== 'undefined' && viteApiUrl.includes('onrender.com')) {
+        backendUrl = `${viteApiUrl}/api`;
+        console.log('✅ Strategy 1 - Using VITE_API_URL:', backendUrl);
+        return backendUrl;
+      }
+      
+      // Strategy 2: Use the correct backend URL that matches your deployed services
+      // Frontend: https://lms-frontend-35zj.onrender.com
+      // Backend:  https://lms-backend-qn4t.onrender.com (actual deployed URLs)
+      if (currentHostname.includes('lms-frontend-35zj')) {
+        backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
+        console.log('✅ Strategy 2 - Using correct backend URL for lms-frontend-35zj:', backendUrl);
+        return backendUrl;
+      }
+      
+      // Strategy 3: Fallback to actual deployed backend URL
+      backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
+      console.log('✅ Strategy 3 - Using hardcoded backend URL from render.yaml:', backendUrl);
+      
+      return backendUrl;
+    }
+    
+    // OTHER PRODUCTION PLATFORMS: Always require absolute URL
     if (viteApiUrl && viteApiUrl !== 'undefined') {
       const backendUrl = `${viteApiUrl}/api`;
       console.log('✅ PRODUCTION: Using VITE_API_URL ->', backendUrl);
       return backendUrl;
     }
+    
+    // PRODUCTION ERROR: Never allow relative URLs in production
+    console.error('🚨 CRITICAL ERROR: No absolute backend URL configured for production!');
+    console.error('Please set VITE_API_URL environment variable.');
+    throw new Error('Production deployment requires absolute backend URL. Please configure VITE_API_URL.');
   }
   
-  // Final fallback
-  console.log('⚠️ FALLBACK: Using fallback: /api');
+  // DEVELOPMENT: Use Vite proxy (relative URL is OK here)
+  if (isDev) {
+    console.log('✅ DEVELOPMENT: Using development proxy: /api');
+    return '/api';
+  }
+  
+  // This should never happen, but provide a safeguard
+  console.error('⚠️ UNKNOWN ENVIRONMENT: Falling back to development proxy');
   return '/api';
 };
 
@@ -157,21 +163,41 @@ console.log('=== Final API Base URL ===', detectedBaseURL);
 
 // Validate the detected URL
 if (typeof window !== 'undefined') {
-  console.log('=== Backend URL Validation v1.1.0 ===', {
+  const isProduction = import.meta.env.PROD;
+  const isOnRender = window.location.hostname.includes('onrender.com');
+  const isAbsoluteUrl = detectedBaseURL.startsWith('http');
+  const isRelativeUrl = detectedBaseURL.startsWith('/');
+  
+  console.log('=== Backend URL Validation v1.2.0 ===', {
     detectedURL: detectedBaseURL,
-    isAbsoluteUrl: detectedBaseURL.startsWith('http'),
-    isRelativeUrl: detectedBaseURL.startsWith('/'),
+    isProduction,
+    isAbsoluteUrl,
+    isRelativeUrl,
     hasOnRender: detectedBaseURL.includes('onrender.com'),
     hasApiPath: detectedBaseURL.includes('/api'),
     currentDomain: window.location.hostname,
-    isOnRender: window.location.hostname.includes('onrender.com')
+    isOnRender,
+    environment: import.meta.env.MODE
   });
   
-  // Critical error check for Render deployments
-  if (window.location.hostname.includes('onrender.com') && detectedBaseURL.startsWith('/')) {
-    console.error('🚨 CRITICAL ERROR: Using relative URL on Render deployment!');
-    console.error('Expected absolute URL like: https://lms-backend-thlg.onrender.com/api');
+  // Critical error check for production deployments using relative URLs
+  if (isProduction && isRelativeUrl) {
+    console.error('🚨 CRITICAL ERROR: Using relative URL in production environment!');
+    console.error('Environment:', import.meta.env.MODE);
+    console.error('Expected absolute URL like: https://your-backend.onrender.com/api');
     console.error('Current detected URL:', detectedBaseURL);
+    console.error('VITE_API_URL:', import.meta.env.VITE_API_URL);
+    
+    // This will help debug deployment issues
+    if (isOnRender) {
+      console.error('On Render platform but using relative URL - this will cause API failures!');
+    }
+  }
+  
+  // Success confirmation for absolute URLs in production
+  if (isProduction && isAbsoluteUrl) {
+    console.log('✅ PRODUCTION VALIDATION PASSED: Using absolute URL in production');
+    console.log('Backend URL:', detectedBaseURL);
   }
 }
 
