@@ -10,6 +10,7 @@ backend/storage/framework/
 backend/storage/logs/
 backend/.env
 backend/.env.*
+!backend/.env.example
 
 # OS/Editor
 .DS_Store

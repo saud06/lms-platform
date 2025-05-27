@@ -60,7 +60,10 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://lms-frontend-2ksd.onrender.com
+        fromService:
+          type: web
+          name: lms-frontend
+          property: url
 
   # Frontend React Application (Static Site)
   - type: web
@@ -74,7 +77,10 @@ services:
         value: production
       # Backend URL - using the actual service URL from Render
       - key: VITE_API_URL
-        value: https://lms-backend-thlg.onrender.com
+        fromService:
+          type: web
+          name: lms-backend
+          property: url
 
 # Database
 databases:
