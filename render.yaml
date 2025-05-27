@@ -2,8 +2,7 @@ services:
   # Backend Laravel API Service (Docker)
   - type: web
     name: lms-backend
-    runtime: docker
-    rootDir: ./backend
+    env: docker
     plan: free
     region: oregon
     branch: main
@@ -61,14 +60,10 @@ services:
         generateValue: true
 
   # Frontend React Application (Static Site)
-  - type: web
+  - type: static
     name: lms-frontend
-    runtime: static
-    rootDir: ./frontend
     buildCommand: "npm ci && npm run build"
-    staticPublishPath: ./dist
-    plan: free
-    branch: main
+    publishPath: ./dist
     envVars:
       - key: NODE_ENV
         value: production
