@@ -78,10 +78,12 @@
         </div>
 
         <div class="section">
-            <h3>🌐 API Connectivity Tests</h3>
+            <h3>🌐 Backend Service Connectivity Tests</h3>
+            <button onclick="testBackendServiceExists()">Test Backend Service Existence</button>
             <button onclick="testApiHealth()">Test API Health (/api/test)</button>
             <button onclick="testBackendDirect()">Test Backend Root</button>
             <button onclick="testCORS()">Test CORS</button>
+            <button onclick="testMultipleBackendUrls()">Test All Possible Backend URLs</button>
         </div>
 
         <div class="section">
@@ -206,6 +208,95 @@
             } catch (error) {
                 log(`Request failed: ${error.message}`, 'error');
                 throw error;
+            }
+        }
+
+        async function testBackendServiceExists() {
+            log('=== Testing Backend Service Existence ===', 'info');
+            
+            const possibleBackendUrls = [
+                // Pattern 1: Simple replacement
+                window.location.origin.replace('lms-frontend', 'lms-backend'),
+                // Pattern 2: Standard Render service naming
+                'https://lms-backend.onrender.com',
+                // Pattern 3: Different naming patterns
+                'https://lms-backend-' + window.location.hostname.split('-')[2], // Extract random suffix
+                // Pattern 4: Check if backend is on same domain
+                window.location.origin + '/backend'
+            ];
+            
+            log('Testing possible backend URLs: ' + JSON.stringify(possibleBackendUrls), 'info');
+            
+            for (const url of possibleBackendUrls) {
+                try {
+                    log(`Testing: ${url}`, 'info');
+                    const response = await fetch(url, { 
+                        method: 'GET',
+                        mode: 'cors',
+                        timeout: 5000
+                    });
+                    
+                    log(`✅ ${url} - Status: ${response.status} ${response.statusText}`, 'success');
+                    
+                    if (response.ok) {
+                        const text = await response.text();
+                        log(`Response preview: ${text.substring(0, 200)}`, 'success');
+                        
+                        // If this looks like a Laravel response, mark as found
+                        if (text.includes('Laravel') || text.includes('Artisan') || response.status === 200) {
+                            log(`🎯 FOUND WORKING BACKEND: ${url}`, 'success');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    log(`❌ ${url} - Error: ${error.message}`, 'error');
+                }
+            }
+            
+            log('⚠️ No accessible backend service found!', 'error');
+        }
+        
+        async function testMultipleBackendUrls() {
+            log('=== Testing Multiple Backend URL Patterns ===', 'info');
+            
+            const currentHostname = window.location.hostname;
+            const frontendParts = currentHostname.split('.');
+            
+            // Extract potential service identifiers
+            const baseServiceName = frontendParts[0].replace('lms-frontend', 'lms-backend');
+            
+            const testUrls = [
+                `https://${baseServiceName}.onrender.com/api/test`,
+                `https://lms-backend.onrender.com/api/test`,
+                window.location.origin.replace('lms-frontend', 'lms-backend') + '/api/test',
+                // Test if backend is deployed with different naming
+                `https://lms-backend-api.onrender.com/api/test`,
+                `https://lms-api.onrender.com/api/test`
+            ];
+            
+            log('Testing backend API endpoints:', 'info');
+            
+            for (const url of testUrls) {
+                try {
+                    log(`Testing API: ${url}`, 'info');
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    log(`✅ API Working: ${url} - Response: ${JSON.stringify(data)}`, 'success');
+                    
+                    if (data && (data.message || data.status)) {
+                        log(`🎯 FOUND WORKING API ENDPOINT: ${url}`, 'success');
+                    }
+                } catch (error) {
+                    log(`❌ API Failed: ${url} - ${error.message}`, 'error');
+                }
             }
         }
 

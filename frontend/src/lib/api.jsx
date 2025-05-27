@@ -84,55 +84,61 @@ const getBaseURL = () => {
   const viteApiUrl = import.meta.env.VITE_API_URL;
   const mode = import.meta.env.MODE;
   
-  console.log('=== API URL Detection v1.0.4 ===', {
+  // Get current location info
+  const hasWindow = typeof window !== 'undefined';
+  const currentHostname = hasWindow ? window.location.hostname : '';
+  const currentOrigin = hasWindow ? window.location.origin : '';
+  const currentHref = hasWindow ? window.location.href : '';
+  
+  console.log('=== API URL Detection v1.0.5 ===', {
     isDev,
     isProd,
     viteApiUrl,
     mode,
-    hasWindow: typeof window !== 'undefined',
-    currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR',
+    hasWindow,
+    currentHostname,
+    currentOrigin,
+    currentHref,
     timestamp: new Date().toISOString()
   });
   
+  // CRITICAL FIX: Force backend URL for ANY onrender.com deployment
+  if (hasWindow && (currentHostname.includes('onrender.com') || currentOrigin.includes('onrender.com') || currentHref.includes('onrender.com'))) {
+    console.log('=== RENDER DEPLOYMENT DETECTED - FORCED BACKEND URL ===');
+    
+    // Multiple backend URL construction strategies
+    let backendUrl;
+    
+    if (currentHostname.includes('lms-frontend')) {
+      // Strategy 1: Replace lms-frontend with lms-backend in hostname
+      backendUrl = currentOrigin.replace('lms-frontend', 'lms-backend') + '/api';
+      console.log('Strategy 1 - Hostname replacement:', backendUrl);
+    } else if (currentHostname.startsWith('lms-frontend')) {
+      // Strategy 2: Handle different naming patterns
+      const backendHostname = currentHostname.replace('lms-frontend', 'lms-backend');
+      backendUrl = `https://${backendHostname}/api`;
+      console.log('Strategy 2 - Direct hostname construction:', backendUrl);
+    } else {
+      // Strategy 3: Fallback to standard Render service naming
+      backendUrl = 'https://lms-backend.onrender.com/api';
+      console.log('Strategy 3 - Standard service name:', backendUrl);
+    }
+    
+    console.log('=== RENDER: Final backend URL ===', backendUrl);
+    return backendUrl;
+  }
+  
   // Force production mode detection for deployed apps
-  const isDeployedProduction = typeof window !== 'undefined' && 
-    (window.location.hostname.includes('onrender.com') || 
-     window.location.hostname.includes('netlify.app') || 
-     window.location.hostname.includes('vercel.app'));
+  const isDeployedProduction = hasWindow && 
+    (currentHostname.includes('netlify.app') || 
+     currentHostname.includes('vercel.app'));
   
   console.log('=== Production Detection Results ===', {
     isDeployedProduction,
     isProdEnv: isProd,
     finalIsProduction: isProd || isDeployedProduction,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR'
+    hostname: currentHostname
   });
-  
-  // PRIORITY 1: Handle Render deployment specifically
-  if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
-    const currentOrigin = window.location.origin;
-    console.log('=== Render Deployment Detection TRIGGERED ===', {
-      currentOrigin,
-      hostname: window.location.hostname
-    });
-    
-    // Try multiple backend URL patterns
-    const backendPatterns = [
-      // Pattern 1: Simple replacement lms-frontend -> lms-backend
-      currentOrigin.replace('lms-frontend', 'lms-backend'),
-      // Pattern 2: If service has random suffix, try common patterns
-      currentOrigin.replace(/lms-frontend-[^.]+/, 'lms-backend'),
-      // Pattern 3: If above fails, construct from service name in render.yaml
-      'https://lms-backend.onrender.com'
-    ];
-    
-    console.log('=== Backend URL Patterns to Try ===', backendPatterns);
-    
-    // For now, use the first pattern and add debugging
-    const hardcodedBackendUrl = backendPatterns[0] + '/api';
-    console.log('RENDER DEPLOYMENT: Using backend URL ->', hardcodedBackendUrl);
-    return hardcodedBackendUrl;
-  }
   
   // PRIORITY 2: In development, use the Vite proxy setup
   if (isDev && !isDeployedProduction) {
@@ -150,9 +156,8 @@ const getBaseURL = () => {
     }
     
     // Fallback: try to infer backend URL from current domain
-    if (typeof window !== 'undefined') {
-      const currentUrl = window.location.origin;
-      const backendUrl = currentUrl.replace('lms-frontend', 'lms-backend');
+    if (hasWindow) {
+      const backendUrl = currentOrigin.replace('lms-frontend', 'lms-backend');
       console.log('PRODUCTION: Inferred backend URL ->', backendUrl + '/api');
       return `${backendUrl}/api`;
     }
@@ -169,19 +174,28 @@ console.log('=== Final API Base URL ===', detectedBaseURL);
 
 // Quick validation of the detected URL
 if (typeof window !== 'undefined') {
-  console.log('=== Backend URL Validation ===', {
+  console.log('=== Backend URL Validation v1.0.5 ===', {
     detectedURL: detectedBaseURL,
     isHttps: detectedBaseURL.startsWith('https://'),
     hasOnRender: detectedBaseURL.includes('onrender.com'),
     hasApiPath: detectedBaseURL.includes('/api'),
+    isRelativeUrl: detectedBaseURL.startsWith('/'),
+    isAbsoluteUrl: detectedBaseURL.startsWith('http'),
     currentDomain: window.location.hostname,
     currentOrigin: window.location.origin,
     expectedBackendDomain: window.location.hostname.replace('lms-frontend', 'lms-backend'),
-    hostnameIncludes: {
+    hostnameChecks: {
       'lms-frontend': window.location.hostname.includes('lms-frontend'),
-      'onrender.com': window.location.hostname.includes('onrender.com')
+      'onrender.com': window.location.hostname.includes('onrender.com'),
+      'full_hostname': window.location.hostname
     }
   });
+  
+  // Alert if still using relative URL on production
+  if (window.location.hostname.includes('onrender.com') && detectedBaseURL.startsWith('/')) {
+    console.error('🚨 CRITICAL ERROR: Still using relative URL on Render deployment!');
+    console.error('This will cause API requests to fail. URL detection logic needs fixing.');
+  }
 }
 
 const api = MOCK_MODE ? mockAPI : axios.create({
@@ -204,11 +218,11 @@ const apiConfig = {
   isDevelopment: import.meta.env.DEV,
   currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
   userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'SSR',
-  buildTimestamp: '2025-08-27T19:55:00Z',
-  version: '1.0.4'
+  buildTimestamp: '2025-08-27T20:00:00Z',
+  version: '1.0.5'
 };
 
-console.log('=== API Configuration v1.0.4 ===', apiConfig);
+console.log('=== API Configuration v1.0.5 ===', apiConfig);
 
 // Additional network debugging
 if (typeof window !== 'undefined') {
