@@ -81,6 +81,94 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Manual database seeding endpoint for production
+Route::post('/debug/seed-database', function (Request $request) {
+    try {
+        // Security check - only allow if no users exist
+        $userCount = User::count();
+        if ($userCount > 0) {
+            return response()->json([
+                'status' => 'skipped',
+                'message' => 'Database already has users, seeding skipped for safety',
+                'user_count' => $userCount
+            ]);
+        }
+        
+        // Create the essential users manually (same as ProductionSeeder)
+        $users = [];
+        
+        // Create Admin User
+        $admin = User::create([
+            'name' => 'System Administrator',
+            'email' => 'admin@lmsplatform.com',
+            'password' => Hash::make('AdminPass123!'),
+            'role' => User::ROLE_ADMIN,
+            'bio' => 'System Administrator',
+            'phone' => '+1-000-000-0000',
+            'is_active' => true,
+        ]);
+        $users[] = $admin;
+        
+        // Create Demo Instructor
+        $instructor = User::create([
+            'name' => 'Demo Instructor',
+            'email' => 'instructor@lmsplatform.com',
+            'password' => Hash::make('InstructorPass123!'),
+            'role' => User::ROLE_INSTRUCTOR,
+            'bio' => 'Demo instructor account for testing and demonstration purposes.',
+            'phone' => '+1-000-000-0001',
+            'is_active' => true,
+        ]);
+        $users[] = $instructor;
+        
+        // Create Demo Student
+        $student = User::create([
+            'name' => 'Demo Student',
+            'email' => 'student@lmsplatform.com',
+            'password' => Hash::make('StudentPass123!'),
+            'role' => User::ROLE_STUDENT,
+            'bio' => 'Demo student account for testing and demonstration purposes.',
+            'phone' => '+1-000-000-0002',
+            'is_active' => true,
+        ]);
+        $users[] = $student;
+        
+        // Return success with created users
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Database seeded successfully!',
+            'users_created' => count($users),
+            'users' => array_map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role
+                ];
+            }, $users),
+            'login_credentials' => [
+                'admin' => ['email' => 'admin@lmsplatform.com', 'password' => 'AdminPass123!'],
+                'instructor' => ['email' => 'instructor@lmsplatform.com', 'password' => 'InstructorPass123!'],
+                'student' => ['email' => 'student@lmsplatform.com', 'password' => 'StudentPass123!']
+            ],
+            'timestamp' => now()->toIso8601String()
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('Manual seeding failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Seeding failed: ' . $e->getMessage(),
+            'error_type' => get_class($e),
+            'timestamp' => now()->toIso8601String()
+        ], 500);
+    }
+});
+
 // Debug endpoint for checking users in database
 Route::get('/debug/users', function () {
     try {

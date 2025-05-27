@@ -77,6 +77,7 @@
         <div class="test-section">
             <h2>🔍 Database User Check</h2>
             <button onclick="checkUsers()">Check Available Users</button>
+            <button onclick="seedDatabase()" style="background-color: #28a745;">🌱 Seed Database</button>
             <div id="user-check-result"></div>
         </div>
 
@@ -133,6 +134,65 @@
                 return `${viteApiUrl}/api`;
             }
             return '/api'; // Development fallback
+        }
+
+        async function seedDatabase() {
+            try {
+                const backendURL = getBackendURL();
+                const seedURL = `${backendURL}/debug/seed-database`;
+                
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">🌱 Seeding database at: ${seedURL}</div>`;
+
+                const response = await fetch(seedURL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.status === 'success') {
+                        let html = `<div class="success">✅ Database seeded successfully!<br>
+                        Created ${data.users_created} users:</div>`;
+                        
+                        data.users.forEach(user => {
+                            html += `
+                                <div class="user-card">
+                                    <strong>${user.name}</strong> (${user.role})<br>
+                                    Email: <code>${user.email}</code>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `<div class="credentials">
+                            <h3>🔑 Login Credentials:</h3>
+                            <div class="user-card">
+                                <strong>Admin:</strong> ${data.login_credentials.admin.email} / ${data.login_credentials.admin.password}
+                            </div>
+                            <div class="user-card">
+                                <strong>Instructor:</strong> ${data.login_credentials.instructor.email} / ${data.login_credentials.instructor.password}
+                            </div>
+                            <div class="user-card">
+                                <strong>Student:</strong> ${data.login_credentials.student.email} / ${data.login_credentials.student.password}
+                            </div>
+                        </div>`;
+                        
+                        document.getElementById('user-check-result').innerHTML = html;
+                    } else {
+                        document.getElementById('user-check-result').innerHTML = 
+                            `<div class="warning">⚠️ ${data.message}</div>`;
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ Database seeding failed: ${error.message}</div>`;
+            }
         }
 
         async function checkUsers() {
