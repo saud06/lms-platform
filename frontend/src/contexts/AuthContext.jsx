@@ -104,10 +104,27 @@ export function AuthProvider({ children }) {
           contentLength: response.data ? String(response.data).length : 0,
           isHtml: typeof response.data === 'string' && response.data.includes('<html>'),
           is404: typeof response.data === 'string' && response.data.includes('404'),
+          isErrorPage: typeof response.data === 'string' && (response.data.includes('Error') || response.data.includes('Exception')),
           requestUrl: response.config?.url,
-          fullRequestUrl: response.config?.baseURL + response.config?.url
+          fullRequestUrl: response.config?.baseURL + response.config?.url,
+          statusCode: response.status,
+          responseHeaders: response.headers,
+          actualResponse: String(response.data).substring(0, 500)
         });
-        throw new Error(`Invalid response format: expected object, got ${typeof response.data}. Content: ${String(response.data).substring(0, 100)}`);
+        
+        // Try to determine the specific issue
+        let errorMessage = 'Invalid response format received from server';
+        if (typeof response.data === 'string') {
+          if (response.data.includes('404')) {
+            errorMessage = 'Login endpoint not found (404). Check if backend is deployed correctly.';
+          } else if (response.data.includes('<html>')) {
+            errorMessage = 'Received HTML instead of JSON. This indicates a server error or incorrect URL.';
+          } else if (response.data.includes('CORS')) {
+            errorMessage = 'CORS error detected. Backend may not allow requests from this domain.';
+          }
+        }
+        
+        throw new Error(`${errorMessage} Expected JSON object with user and token fields, but got ${typeof response.data}. Response: ${String(response.data).substring(0, 200)}`);
       }
       
       const { user, token } = response.data;
@@ -196,13 +213,72 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const testApiConnectivity = async () => {
+    console.log('=== Testing API Connectivity ===');
+    
+    try {
+      // Test 1: Health check
+      console.log('Test 1: Health check');
+      const healthResponse = await api.get('/test');
+      console.log('Health check success:', healthResponse.data);
+      
+      // Test 2: Debug endpoint
+      console.log('Test 2: Debug endpoint');
+      const debugResponse = await api.get('/debug');
+      console.log('Debug endpoint success:', debugResponse.data);
+      
+      // Test 3: Debug login
+      console.log('Test 3: Debug login');
+      const debugLoginResponse = await api.post('/debug/login', {
+        email: 'admin@example.com',
+        password: 'password'
+      });
+      console.log('Debug login success:', debugLoginResponse.data);
+      
+      return {
+        success: true,
+        health: healthResponse.data,
+        debug: debugResponse.data,
+        debugLogin: debugLoginResponse.data
+      };
+      
+    } catch (error) {
+      console.error('API connectivity test failed:', error);
+      return {
+        success: false,
+        error: error.message,
+        details: {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          config: error.config
+        }
+      };
+    }
+  };
+
+  const debugLogin = async (email = 'admin@example.com', password = 'password') => {
+    console.log('=== Debug Login Test ===', { email });
+    
+    try {
+      const response = await api.post('/debug/login', { email, password });
+      console.log('Debug login response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Debug login failed:', error);
+      throw error;
+    }
+  };
+
   const value = {
     ...state,
     login,
     register,
     logout,
     setUser,
-    refreshToken
+    refreshToken,
+    testApiConnectivity,
+    debugLogin
   }
 
   return (

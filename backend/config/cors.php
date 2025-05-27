@@ -24,6 +24,10 @@ return [
         'http://localhost:3001', 'http://127.0.0.1:3001',
         'http://localhost:3002', 'http://127.0.0.1:3002',
         'https://lms-frontend-36m1.onrender.com',
+        'https://lms-frontend-2ksd.onrender.com', // Current deployed frontend
+        'https://lms-frontend-thlg.onrender.com',
+        // Add the matching frontend service name from render.yaml
+        'https://lms-frontend.onrender.com',
     ],
 
     'allowed_origins_patterns' => [
@@ -32,6 +36,9 @@ return [
         'https://*-lms-platform-frontend*.onrender.com',
         'https://lms-platform-frontend*.onrender.com',
         'https://*frontend*.onrender.com',
+        // More flexible patterns for Render service variations
+        'https://lms-frontend-*.onrender.com',
+        'https://lms-frontend.onrender.com',
     ],
 
     'allowed_headers' => ['*'],

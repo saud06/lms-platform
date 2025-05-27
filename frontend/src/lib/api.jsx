@@ -90,7 +90,7 @@ const getBaseURL = () => {
   const currentOrigin = hasWindow ? window.location.origin : '';
   const currentHref = hasWindow ? window.location.href : '';
   
-  console.log('=== API URL Detection v1.0.6 ===', {
+  console.log('=== API URL Detection v1.1.0 ===', {
     isDev,
     isProd,
     viteApiUrl,
@@ -102,46 +102,38 @@ const getBaseURL = () => {
     timestamp: new Date().toISOString()
   });
   
-  // BULLETPROOF FIX: Force backend URL for ANY onrender.com deployment
+  // RENDER DEPLOYMENT: Force backend URL for onrender.com deployments
   if (hasWindow && currentHostname.includes('onrender.com')) {
-    console.log('=== RENDER DEPLOYMENT DETECTED - FORCING BACKEND URL ===');
+    console.log('=== RENDER DEPLOYMENT DETECTED ===');
     
     let backendUrl;
     
-    // Strategy 1: Use VITE_API_URL if available
-    if (viteApiUrl && viteApiUrl !== 'undefined' && !viteApiUrl.includes('localhost')) {
+    // Strategy 1: Use VITE_API_URL if properly configured
+    if (viteApiUrl && viteApiUrl !== 'undefined' && viteApiUrl.includes('onrender.com')) {
       backendUrl = `${viteApiUrl}/api`;
-      console.log('Strategy 1 - Using VITE_API_URL:', backendUrl);
-    }
-    // Strategy 2: Extract service pattern from current URL
-    else if (currentHostname.includes('lms-frontend')) {
-      // Extract the suffix (e.g., "-2ksd" from "lms-frontend-2ksd")
-      const parts = currentHostname.split('.');
-      const servicePart = parts[0]; // "lms-frontend-XXXX"
-      const suffix = servicePart.replace('lms-frontend', ''); // "-XXXX"
-      
-      // For known actual backend, use the real URL
-      if (servicePart.includes('2ksd')) {
-        backendUrl = 'https://lms-backend-thlg.onrender.com/api';
-        console.log('Strategy 2A - Known backend mapping:', backendUrl);
-      } else {
-        backendUrl = `https://lms-backend${suffix}.onrender.com/api`;
-        console.log('Strategy 2B - Service pattern extraction:', backendUrl);
-      }
-    }
-    // Strategy 3: Try direct replacement
-    else {
-      backendUrl = currentOrigin.replace('lms-frontend', 'lms-backend') + '/api';
-      console.log('Strategy 3 - Direct replacement:', backendUrl);
+      console.log('✅ Strategy 1 - Using VITE_API_URL:', backendUrl);
+      return backendUrl;
     }
     
-    console.log('=== RENDER: Final backend URL ===', backendUrl);
+    // Strategy 2: Use the correct backend URL that matches your deployed services
+    // Frontend: https://lms-frontend-2ksd.onrender.com
+    // Backend:  https://lms-backend-thlg.onrender.com (from render.yaml)
+    if (currentHostname.includes('lms-frontend-2ksd')) {
+      backendUrl = 'https://lms-backend-thlg.onrender.com/api';
+      console.log('✅ Strategy 2 - Using correct backend URL for lms-frontend-2ksd:', backendUrl);
+      return backendUrl;
+    }
+    
+    // Strategy 3: Fallback to hardcoded backend URL from render.yaml
+    backendUrl = 'https://lms-backend-thlg.onrender.com/api';
+    console.log('✅ Strategy 3 - Using hardcoded backend URL from render.yaml:', backendUrl);
+    
     return backendUrl;
   }
   
   // DEVELOPMENT: Use Vite proxy
   if (isDev) {
-    console.log('DEVELOPMENT: Using development proxy: /api');
+    console.log('✅ DEVELOPMENT: Using development proxy: /api');
     return '/api';
   }
   
@@ -149,13 +141,13 @@ const getBaseURL = () => {
   if (isProd) {
     if (viteApiUrl && viteApiUrl !== 'undefined') {
       const backendUrl = `${viteApiUrl}/api`;
-      console.log('PRODUCTION: Using VITE_API_URL ->', backendUrl);
+      console.log('✅ PRODUCTION: Using VITE_API_URL ->', backendUrl);
       return backendUrl;
     }
   }
   
   // Final fallback
-  console.log('FALLBACK: Using fallback: /api');
+  console.log('⚠️ FALLBACK: Using fallback: /api');
   return '/api';
 };
 
@@ -163,31 +155,23 @@ const getBaseURL = () => {
 const detectedBaseURL = getBaseURL();
 console.log('=== Final API Base URL ===', detectedBaseURL);
 
-// Quick validation of the detected URL
+// Validate the detected URL
 if (typeof window !== 'undefined') {
-  console.log('=== Backend URL Validation v1.0.6 ===', {
+  console.log('=== Backend URL Validation v1.1.0 ===', {
     detectedURL: detectedBaseURL,
-    isHttps: detectedBaseURL.startsWith('https://'),
+    isAbsoluteUrl: detectedBaseURL.startsWith('http'),
+    isRelativeUrl: detectedBaseURL.startsWith('/'),
     hasOnRender: detectedBaseURL.includes('onrender.com'),
     hasApiPath: detectedBaseURL.includes('/api'),
-    isRelativeUrl: detectedBaseURL.startsWith('/'),
-    isAbsoluteUrl: detectedBaseURL.startsWith('http'),
     currentDomain: window.location.hostname,
-    currentOrigin: window.location.origin,
-    servicePattern: window.location.hostname.split('.')[0], // e.g., "lms-frontend-2ksd"
-    expectedBackendDomain: window.location.hostname.replace('lms-frontend', 'lms-backend'),
-    hostnameChecks: {
-      'lms-frontend': window.location.hostname.includes('lms-frontend'),
-      'onrender.com': window.location.hostname.includes('onrender.com'),
-      'full_hostname': window.location.hostname
-    }
+    isOnRender: window.location.hostname.includes('onrender.com')
   });
   
-  // Alert if still using relative URL on production
+  // Critical error check for Render deployments
   if (window.location.hostname.includes('onrender.com') && detectedBaseURL.startsWith('/')) {
-    console.error('🚨 CRITICAL ERROR: Still using relative URL on Render deployment!');
-    console.error('This will cause API requests to fail. URL detection logic needs fixing.');
-    console.error('Expected absolute URL like: https://lms-backend-XXXX.onrender.com/api');
+    console.error('🚨 CRITICAL ERROR: Using relative URL on Render deployment!');
+    console.error('Expected absolute URL like: https://lms-backend-thlg.onrender.com/api');
+    console.error('Current detected URL:', detectedBaseURL);
   }
 }
 
@@ -211,11 +195,11 @@ const apiConfig = {
   isDevelopment: import.meta.env.DEV,
   currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
   userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'SSR',
-  buildTimestamp: '2025-08-27T20:20:00Z',
-  version: '1.0.7'
+  buildTimestamp: '2025-08-27T22:00:00Z',
+  version: '1.1.0'
 };
 
-console.log('=== API Configuration v1.0.7 ===', apiConfig);
+console.log('=== API Configuration v1.1.0 ===', apiConfig);
 
 // Additional network debugging
 if (typeof window !== 'undefined') {

@@ -59,6 +59,8 @@ services:
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
+      - key: FRONTEND_URL
+        value: https://lms-frontend-2ksd.onrender.com
 
   # Frontend React Application (Static Site)
   - type: web
