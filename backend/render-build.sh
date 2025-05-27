@@ -4,6 +4,19 @@
 
 set -o errexit # Exit on any command failure
 
+# Install PHP on Node runtime
+echo "Installing PHP..."
+if ! command -v php &> /dev/null; then
+    # Update package list
+    apt-get update
+    
+    # Install PHP and required extensions
+    apt-get install -y php8.1 php8.1-cli php8.1-common php8.1-mysql php8.1-zip php8.1-gd php8.1-mbstring php8.1-curl php8.1-xml php8.1-bcmath
+    
+    # Install Composer
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+fi
+
 # Install PHP dependencies
 composer install --no-dev --optimize-autoloader
 
