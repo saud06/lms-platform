@@ -70,11 +70,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Manual backend URL - will be updated after backend deployment
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: lms-backend
-          property: url
+        value: https://lms-backend.onrender.com
 
 # Database
 databases:
