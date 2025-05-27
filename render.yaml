@@ -74,7 +74,7 @@ services:
         fromService:
           type: web
           name: lms-backend
-          property: host
+          property: url
 
 # Database
 databases:
