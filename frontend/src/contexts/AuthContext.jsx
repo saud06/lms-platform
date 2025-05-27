@@ -69,9 +69,16 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      console.log('Attempting login with:', { email })
+      console.log('AuthContext v1.0.1 - Starting login process:', { email, timestamp: new Date().toISOString() })
+      console.log('AuthContext - API base URL:', api.defaults?.baseURL || 'proxy mode')
+      
       const response = await api.post('/login', { email, password })
-      console.log('Login response:', response.data)
+      console.log('AuthContext - Login API response:', {
+        status: response.status,
+        data: response.data,
+        timestamp: new Date().toISOString()
+      })
+      
       const { user, token } = response.data
       
       Cookies.set('token', token, { expires: 7 })
@@ -81,8 +88,15 @@ export function AuthProvider({ children }) {
         type: 'LOGIN_SUCCESS',
         payload: { user, token }
       })
+      
+      console.log('AuthContext - Login successful, user authenticated:', user)
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message)
+      console.error('AuthContext - Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        timestamp: new Date().toISOString()
+      })
       throw error
     }
   }

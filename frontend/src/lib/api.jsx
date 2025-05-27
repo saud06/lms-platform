@@ -90,7 +90,9 @@ console.log('API Configuration:', {
   environment: import.meta.env.MODE,
   viteApiUrl: import.meta.env.VITE_API_URL,
   isProduction: import.meta.env.PROD,
-  apiURL: import.meta.env.VITE_API_URL || 'NOT_SET'
+  apiURL: import.meta.env.VITE_API_URL || 'NOT_SET',
+  buildTimestamp: '2024-05-27T15:30:00Z',
+  version: '1.0.1'
 });
 
 // Only add interceptors for real axios instance

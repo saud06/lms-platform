@@ -65,7 +65,7 @@ services:
     name: lms-frontend
     env: static
     rootDir: ./frontend
-    buildCommand: "npm ci --include=dev && npm run build"
+    buildCommand: "rm -rf node_modules/.cache && npm ci --include=dev && npm run build"
     staticPublishPath: ./dist
     envVars:
       - key: NODE_ENV
