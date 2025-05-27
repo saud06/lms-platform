@@ -116,16 +116,16 @@ const getBaseURL = () => {
     }
     
     // Strategy 2: Use the correct backend URL that matches your deployed services
-    // Frontend: https://lms-frontend-2ksd.onrender.com
-    // Backend:  https://lms-backend-thlg.onrender.com (from render.yaml)
-    if (currentHostname.includes('lms-frontend-2ksd')) {
-      backendUrl = 'https://lms-backend-thlg.onrender.com/api';
-      console.log('✅ Strategy 2 - Using correct backend URL for lms-frontend-2ksd:', backendUrl);
+    // Frontend: https://lms-frontend-35zj.onrender.com
+    // Backend:  https://lms-backend-qn4t.onrender.com (actual deployed URLs)
+    if (currentHostname.includes('lms-frontend-35zj')) {
+      backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
+      console.log('✅ Strategy 2 - Using correct backend URL for lms-frontend-35zj:', backendUrl);
       return backendUrl;
     }
     
-    // Strategy 3: Fallback to hardcoded backend URL from render.yaml
-    backendUrl = 'https://lms-backend-thlg.onrender.com/api';
+    // Strategy 3: Fallback to actual deployed backend URL
+    backendUrl = 'https://lms-backend-qn4t.onrender.com/api';
     console.log('✅ Strategy 3 - Using hardcoded backend URL from render.yaml:', backendUrl);
     
     return backendUrl;
