@@ -66,9 +66,9 @@ const mockAPI = {
 
 // Get base URL from environment or use default
 const getBaseURL = () => {
-  // In production, use the environment variable
+  // In production, use the environment variable from Render
   if (import.meta.env.PROD && import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    return `${import.meta.env.VITE_API_URL}/api`;
   }
   // In development, use the proxy setup
   return '/api';
@@ -82,6 +82,14 @@ const api = MOCK_MODE ? mockAPI : axios.create({
   },
   timeout: 10000,
 })
+
+// Log the API configuration for debugging
+console.log('API Configuration:', {
+  mockMode: MOCK_MODE,
+  baseURL: getBaseURL(),
+  environment: import.meta.env.MODE,
+  viteApiUrl: import.meta.env.VITE_API_URL
+});
 
 // Only add interceptors for real axios instance
 if (!MOCK_MODE) {
@@ -106,8 +114,20 @@ if (!MOCK_MODE) {
 if (!MOCK_MODE) {
   // Response interceptor to handle token refresh
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status);
+      return response;
+    },
     async (error) => {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
       const originalRequest = error.config
 
       if (error.response?.status === 401 && !originalRequest._retry) {
@@ -122,6 +142,7 @@ if (!MOCK_MODE) {
           
           return api(originalRequest)
         } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
           Cookies.remove('token')
           window.location.href = '/auth/login'
           return Promise.reject(refreshError)
