@@ -1,0 +1,101 @@
+services:
+  # Backend Laravel API Service
+  - type: web
+    name: lms-backend
+    runtime: php
+    env: php
+    rootDir: ./backend
+    buildCommand: "./render-build.sh"
+    startCommand: "./render-start.sh"
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /api/test
+    envVars:
+      - key: APP_NAME
+        value: "LMS Platform"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        fromService:
+          type: web
+          name: lms-backend
+          property: host
+      - key: LOG_CHANNEL
+        value: errorlog
+      - key: LOG_LEVEL
+        value: error
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: lms-database
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: lms-database
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: lms-database
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: lms-database
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: lms-database
+          property: password
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: SESSION_LIFETIME
+        value: "120"
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: MAIL_MAILER
+        value: log
+      - key: JWT_ALGO
+        value: HS256
+      - key: JWT_TTL
+        value: "60"
+      - key: APP_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Frontend React Application
+  - type: web
+    name: lms-frontend
+    runtime: node
+    env: node
+    rootDir: ./frontend
+    buildCommand: "npm ci && npm run build"
+    staticPublishPath: ./dist
+    plan: free
+    region: oregon
+    branch: main
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://lms-backend.onrender.com$request_uri
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: lms-backend
+          property: host
+
+# Database
+databases:
+  - name: lms-database
+    databaseName: lms_platform
+    user: lms_user
+    plan: free
+    region: oregon

@@ -64,8 +64,18 @@ const mockAPI = {
   }
 };
 
+// Get base URL from environment or use default
+const getBaseURL = () => {
+  // In production, use the environment variable
+  if (import.meta.env.PROD && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In development, use the proxy setup
+  return '/api';
+};
+
 const api = MOCK_MODE ? mockAPI : axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

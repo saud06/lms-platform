@@ -25,7 +25,11 @@ return [
         'http://localhost:3002', 'http://127.0.0.1:3002',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        'https://*-lms-frontend.onrender.com',
+        'https://lms-frontend.onrender.com',
+        'https://*-lms-platform-frontend.onrender.com',
+    ],
 
     'allowed_headers' => ['*'],
 
