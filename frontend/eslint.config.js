@@ -1,35 +1,41 @@
-import js from '@eslint/js';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
-
-export default [
-  {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    ignores: ['dist/**', 'node_modules/**'],
-    languageOptions: {
-      parser: tsparser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: { jsx: true },
-      },
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  extends: [
+    'eslint:recommended',
+    '@typescript-eslint/recommended',
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+    'prettier',
+  ],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
     },
-    plugins: {
-      react,
-      'react-hooks': reactHooks,
-      '@typescript-eslint': tseslint,
-    },
-    rules: {
-      ...js.configs.recommended.rules,
-      ...react.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'react/react-in-jsx-scope': 'off',
-    },
-    settings: {
-      react: { version: 'detect' },
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  plugins: [
+    'react',
+    'react-hooks',
+    '@typescript-eslint',
+    'jsx-a11y',
+    'import',
+  ],
+  rules: {
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+  },
+  settings: {
+    react: {
+      version: 'detect',
     },
   },
-];
+  ignorePatterns: ['dist', 'node_modules'],
+};
