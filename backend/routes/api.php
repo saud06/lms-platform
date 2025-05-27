@@ -81,6 +81,167 @@ Route::post('/test/login', function (Request $request) {
     }
 });
 
+// Raw SQL user creation (bypasses Eloquent if model has issues)
+Route::post('/debug/create-user-raw', function (Request $request) {
+    try {
+        // Test database connection first
+        \DB::connection()->getPdo();
+        
+        // Check if users table exists
+        $tableCheck = \DB::select("SELECT tablename FROM pg_tables WHERE tablename = 'users'");
+        if (count($tableCheck) === 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Users table does not exist. Run migrations first.',
+                'suggestion' => 'php artisan migrate'
+            ], 500);
+        }
+        
+        // Get table structure
+        $columns = \DB::select("SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND table_schema = 'public'");
+        $columnNames = array_column($columns, 'column_name');
+        
+        // Check if admin user already exists
+        $existingUser = \DB::select("SELECT id, name, email, role FROM users WHERE email = 'admin@lmsplatform.com' LIMIT 1");
+        if (!empty($existingUser)) {
+            return response()->json([
+                'status' => 'exists',
+                'message' => 'Admin user already exists',
+                'user' => $existingUser[0],
+                'table_columns' => $columnNames
+            ]);
+        }
+        
+        // Create password hash
+        $password = password_hash('AdminPass123!', PASSWORD_DEFAULT);
+        
+        // Build insert query dynamically based on available columns
+        $insertData = [
+            'name' => 'System Administrator',
+            'email' => 'admin@lmsplatform.com',
+            'password' => $password,
+            'role' => 'admin',
+            'is_active' => true,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        // Add optional fields if they exist
+        if (in_array('bio', $columnNames)) {
+            $insertData['bio'] = 'System Administrator';
+        }
+        if (in_array('phone', $columnNames)) {
+            $insertData['phone'] = '+1-000-000-0000';
+        }
+        if (in_array('email_verified_at', $columnNames)) {
+            $insertData['email_verified_at'] = date('Y-m-d H:i:s');
+        }
+        
+        // Filter only existing columns
+        $filteredData = [];
+        foreach ($insertData as $key => $value) {
+            if (in_array($key, $columnNames)) {
+                $filteredData[$key] = $value;
+            }
+        }
+        
+        // Insert user using raw SQL
+        $placeholders = ':' . implode(', :', array_keys($filteredData));
+        $columns = implode(', ', array_keys($filteredData));
+        
+        $sql = "INSERT INTO users ({$columns}) VALUES ({$placeholders}) RETURNING id, name, email, role";
+        $newUser = \DB::select($sql, $filteredData);
+        
+        return response()->json([
+            'status' => 'created',
+            'message' => 'Admin user created successfully using raw SQL!',
+            'user' => $newUser[0],
+            'credentials' => [
+                'email' => 'admin@lmsplatform.com',
+                'password' => 'AdminPass123!'
+            ],
+            'method' => 'raw_sql',
+            'table_columns' => $columnNames,
+            'inserted_fields' => array_keys($filteredData),
+            'timestamp' => date('c')
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Raw SQL user creation failed: ' . $e->getMessage(),
+            'error_type' => get_class($e),
+            'line' => $e->getLine(),
+            'file' => basename($e->getFile()),
+            'timestamp' => date('c')
+        ], 500);
+    }
+});
+
+// Database-specific diagnostic endpoint
+Route::get('/debug/database-check', function () {
+    $results = [];
+    
+    // Test 1: Basic database connection
+    try {
+        $pdo = \DB::connection()->getPdo();
+        $results['connection'] = 'success';
+        $results['driver'] = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    } catch (\Exception $e) {
+        $results['connection'] = 'failed';
+        $results['connection_error'] = $e->getMessage();
+        return response()->json([
+            'status' => 'database_connection_failed',
+            'results' => $results,
+            'timestamp' => date('c')
+        ], 500);
+    }
+    
+    // Test 2: Check if users table exists
+    try {
+        $tableCheck = \DB::select("SELECT tablename FROM pg_tables WHERE tablename = 'users'");
+        $results['users_table_exists'] = count($tableCheck) > 0;
+    } catch (\Exception $e) {
+        $results['users_table_check_error'] = $e->getMessage();
+    }
+    
+    // Test 3: Try simple query
+    try {
+        $simpleQuery = \DB::select('SELECT 1 as test');
+        $results['simple_query'] = 'success';
+    } catch (\Exception $e) {
+        $results['simple_query_error'] = $e->getMessage();
+    }
+    
+    // Test 4: Check User model (without database operations)
+    try {
+        $results['user_class_exists'] = class_exists(User::class);
+        if (class_exists(User::class)) {
+            $user = new User();
+            $results['user_fillable'] = $user->getFillable();
+            $results['user_table_name'] = $user->getTable();
+        }
+    } catch (\Exception $e) {
+        $results['user_model_error'] = $e->getMessage();
+    }
+    
+    // Test 5: Try to count users (this often fails)
+    try {
+        $userCount = \DB::table('users')->count();
+        $results['user_count'] = $userCount;
+        $results['eloquent_works'] = true;
+    } catch (\Exception $e) {
+        $results['user_count_error'] = $e->getMessage();
+        $results['eloquent_works'] = false;
+    }
+    
+    return response()->json([
+        'status' => 'database_diagnostic_complete',
+        'results' => $results,
+        'timestamp' => date('c')
+    ]);
+});
+
 // Minimal system check that works even with basic issues
 Route::get('/debug/minimal-check', function () {
     try {

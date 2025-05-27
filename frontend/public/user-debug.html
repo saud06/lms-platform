@@ -81,6 +81,8 @@
             <button onclick="seedDatabase(true)" style="background-color: #dc3545;">⚠️ Force Seed (Add More Users)</button>
             <button onclick="createAdminQuickly()" style="background-color: #ff6b35;">⚡ Quick Fix: Create Admin Only</button>
             <button onclick="runSystemDiagnostics()" style="background-color: #6f42c1;">🔧 System Diagnostics</button>
+            <button onclick="runDatabaseDiagnostics()" style="background-color: #17a2b8;">📊 Database Check</button>
+            <button onclick="createUserRawSQL()" style="background-color: #6c757d;">🚪 Raw SQL: Create Admin</button>
             <div id="user-check-result"></div>
         </div>
 
@@ -137,6 +139,206 @@
                 return `${viteApiUrl}/api`;
             }
             return '/api'; // Development fallback
+        }
+
+        async function createUserRawSQL() {
+            try {
+                const backendURL = getBackendURL();
+                const createURL = `${backendURL}/debug/create-user-raw`;
+                
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">🚪 Creating admin using raw SQL at: ${createURL}</div>`;
+
+                const response = await fetch(createURL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 300)}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.status === 'created') {
+                    let html = `<div class="success">✅ Admin user created using raw SQL!</div>`;
+                    
+                    html += `
+                        <div class="user-card">
+                            <strong>${data.user.name}</strong> (${data.user.role})<br>
+                            Email: <code>${data.user.email}</code><br>
+                            ID: ${data.user.id}<br>
+                            Method: ${data.method}
+                        </div>
+                    `;
+                    
+                    html += `<div class="credentials">
+                        <h3>🔑 Login Credentials:</h3>
+                        <div class="user-card">
+                            <strong>Email:</strong> ${data.credentials.email}<br>
+                            <strong>Password:</strong> ${data.credentials.password}
+                        </div>
+                        <p><strong>You can now try logging in with these credentials!</strong></p>
+                    </div>`;
+                    
+                    html += `<div class="info">
+                        <strong>Technical Details:</strong><br>
+                        Table Columns: ${data.table_columns.join(', ')}<br>
+                        Inserted Fields: ${data.inserted_fields.join(', ')}
+                    </div>`;
+                    
+                    document.getElementById('user-check-result').innerHTML = html;
+                    
+                } else if (data.status === 'exists') {
+                    let html = `<div class="info">📝 Admin user already exists!</div>`;
+                    
+                    html += `
+                        <div class="user-card">
+                            <strong>${data.user.name}</strong> (${data.user.role})<br>
+                            Email: <code>${data.user.email}</code><br>
+                            ID: ${data.user.id}
+                        </div>
+                    `;
+                    
+                    html += `<div class="credentials">
+                        <h3>🔑 Try These Credentials:</h3>
+                        <div class="user-card">
+                            <strong>Email:</strong> admin@lmsplatform.com<br>
+                            <strong>Password:</strong> AdminPass123!
+                        </div>
+                    </div>`;
+                    
+                    html += `<div class="info">
+                        <strong>Table Structure:</strong><br>
+                        Columns: ${data.table_columns.join(', ')}
+                    </div>`;
+                    
+                    document.getElementById('user-check-result').innerHTML = html;
+                    
+                } else {
+                    document.getElementById('user-check-result').innerHTML = 
+                        `<div class="warning">⚠️ ${data.message || 'Unknown status'}</div>`;
+                }
+                
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ Raw SQL user creation failed: ${error.message}<br><br>
+                    This suggests fundamental database issues that prevent even basic SQL operations.</div>`;
+            }
+        }
+
+        async function runDatabaseDiagnostics() {
+            try {
+                const backendURL = getBackendURL();
+                const dbURL = `${backendURL}/debug/database-check`;
+                
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="info">📊 Testing database connectivity at: ${dbURL}</div>`;
+
+                const response = await fetch(dbURL, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                }
+
+                const data = await response.json();
+                
+                let html = `<div class="success">📊 Database Diagnostics Complete</div>`;
+                
+                // Connection test
+                html += `<div class="${data.results.connection === 'success' ? 'success' : 'error'}">
+                    <strong>Database Connection:</strong> ${data.results.connection}<br>`;
+                if (data.results.connection === 'success') {
+                    html += `Driver: ${data.results.driver}`;
+                } else {
+                    html += `Error: ${data.results.connection_error}`;
+                }
+                html += `</div>`;
+                
+                // Table existence
+                if (data.results.users_table_exists !== undefined) {
+                    html += `<div class="${data.results.users_table_exists ? 'success' : 'error'}">
+                        <strong>Users Table:</strong> ${data.results.users_table_exists ? '✅ Exists' : '❌ Missing'}
+                    </div>`;
+                }
+                
+                if (data.results.users_table_check_error) {
+                    html += `<div class="error">
+                        <strong>Table Check Error:</strong> ${data.results.users_table_check_error}
+                    </div>`;
+                }
+                
+                // Simple query test
+                if (data.results.simple_query) {
+                    html += `<div class="success">
+                        <strong>Simple Query:</strong> ✅ Working
+                    </div>`;
+                } else if (data.results.simple_query_error) {
+                    html += `<div class="error">
+                        <strong>Simple Query:</strong> ❌ Failed<br>
+                        Error: ${data.results.simple_query_error}
+                    </div>`;
+                }
+                
+                // User model test
+                html += `<div class="${data.results.user_class_exists ? 'success' : 'error'}">
+                    <strong>User Model:</strong> ${data.results.user_class_exists ? '✅ Loaded' : '❌ Missing'}<br>`;
+                if (data.results.user_fillable) {
+                    html += `Fillable: ${data.results.user_fillable.join(', ')}<br>`;
+                }
+                if (data.results.user_table_name) {
+                    html += `Table: ${data.results.user_table_name}`;
+                }
+                if (data.results.user_model_error) {
+                    html += `Error: ${data.results.user_model_error}`;
+                }
+                html += `</div>`;
+                
+                // User count test (critical test)
+                if (data.results.eloquent_works) {
+                    html += `<div class="success">
+                        <strong>User Count Query:</strong> ✅ Working<br>
+                        Count: ${data.results.user_count}
+                    </div>`;
+                } else {
+                    html += `<div class="error">
+                        <strong>User Count Query:</strong> ❌ Failed<br>
+                        Error: ${data.results.user_count_error}<br><br>
+                        <strong>This is likely the root cause!</strong>
+                    </div>`;
+                }
+                
+                // Summary and next steps
+                if (data.results.connection === 'success' && data.results.users_table_exists && data.results.eloquent_works) {
+                    html += `<div class="success">
+                        ✅ Database is healthy! The issues are likely with specific user creation logic or authentication.
+                    </div>`;
+                } else {
+                    html += `<div class="warning">
+                        ⚠️ Database issues found. Common solutions:<br>
+                        • Run migrations: php artisan migrate<br>
+                        • Check database credentials<br>
+                        • Verify PostgreSQL connection<br>
+                        • Check User model configuration
+                    </div>`;
+                }
+                
+                document.getElementById('user-check-result').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('user-check-result').innerHTML = 
+                    `<div class="error">❌ Database diagnostics failed: ${error.message}<br><br>
+                    This suggests severe database connectivity issues.<br>
+                    The database service might be down or misconfigured.</div>`;
+            }
         }
 
         async function runSystemDiagnostics() {
