@@ -69,35 +69,76 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      console.log('AuthContext v1.0.1 - Starting login process:', { email, timestamp: new Date().toISOString() })
-      console.log('AuthContext - API base URL:', api.defaults?.baseURL || 'proxy mode')
+      console.log('=== AuthContext Login Attempt v1.0.2 ===', {
+        email,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        currentUrl: window.location.href
+      });
       
-      const response = await api.post('/login', { email, password })
-      console.log('AuthContext - Login API response:', {
+      console.log('AuthContext - API Configuration Check:', {
+        apiDefaults: api.defaults,
+        baseURL: api.defaults?.baseURL,
+        timeout: api.defaults?.timeout,
+        headers: api.defaults?.headers
+      });
+      
+      const response = await api.post('/login', { email, password });
+      
+      console.log('=== AuthContext Login Response ===', {
         status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataType: typeof response.data,
+        dataKeys: Object.keys(response.data || {}),
         data: response.data,
         timestamp: new Date().toISOString()
-      })
+      });
       
-      const { user, token } = response.data
+      // Check if response has the expected structure
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid response format: expected object, got ' + typeof response.data);
+      }
       
-      Cookies.set('token', token, { expires: 7 })
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      const { user, token } = response.data;
+      
+      if (!user || !token) {
+        console.error('Login response missing required fields:', {
+          hasUser: !!user,
+          hasToken: !!token,
+          responseData: response.data
+        });
+        throw new Error('Login response missing user or token');
+      }
+      
+      Cookies.set('token', token, { expires: 7 });
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: { user, token }
-      })
+      });
       
-      console.log('AuthContext - Login successful, user authenticated:', user)
-    } catch (error) {
-      console.error('AuthContext - Login error details:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
+      console.log('=== AuthContext Login Success ===', {
+        user: user,
+        tokenLength: token?.length,
         timestamp: new Date().toISOString()
-      })
-      throw error
+      });
+      
+    } catch (error) {
+      console.error('=== AuthContext Login Error ===', {
+        message: error.message,
+        stack: error.stack,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestUrl: error.config?.url,
+        requestMethod: error.config?.method,
+        requestData: error.config?.data,
+        isNetworkError: !error.response,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
   }
 

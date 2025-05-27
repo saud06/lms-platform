@@ -66,11 +66,40 @@ const mockAPI = {
 
 // Get base URL from environment or use default
 const getBaseURL = () => {
-  // In production, use the environment variable from Render
-  if (import.meta.env.PROD && import.meta.env.VITE_API_URL) {
-    return `${import.meta.env.VITE_API_URL}/api`;
+  const isDev = import.meta.env.DEV;
+  const isProd = import.meta.env.PROD;
+  const viteApiUrl = import.meta.env.VITE_API_URL;
+  
+  console.log('API URL Detection:', {
+    isDev,
+    isProd,
+    viteApiUrl,
+    mode: import.meta.env.MODE,
+    timestamp: new Date().toISOString()
+  });
+  
+  // In development, use the Vite proxy setup
+  if (isDev) {
+    return '/api';
   }
-  // In development, use the proxy setup
+  
+  // In production, determine the backend URL
+  if (isProd) {
+    // If VITE_API_URL is set, use it (for Render deployment)
+    if (viteApiUrl) {
+      const backendUrl = `${viteApiUrl}/api`;
+      console.log('Production: Using VITE_API_URL ->', backendUrl);
+      return backendUrl;
+    }
+    
+    // Fallback: try to infer backend URL from current domain
+    const currentUrl = window.location.origin;
+    const backendUrl = currentUrl.replace('lms-frontend', 'lms-backend');
+    console.log('Production: Inferred backend URL ->', backendUrl + '/api');
+    return `${backendUrl}/api`;
+  }
+  
+  // Fallback
   return '/api';
 };
 
@@ -84,32 +113,63 @@ const api = MOCK_MODE ? mockAPI : axios.create({
 })
 
 // Log the API configuration for debugging
-console.log('API Configuration:', {
+const apiConfig = {
   mockMode: MOCK_MODE,
   baseURL: getBaseURL(),
   environment: import.meta.env.MODE,
   viteApiUrl: import.meta.env.VITE_API_URL,
   isProduction: import.meta.env.PROD,
-  apiURL: import.meta.env.VITE_API_URL || 'NOT_SET',
-  buildTimestamp: '2024-05-27T15:30:00Z',
-  version: '1.0.1'
-});
+  isDevelopment: import.meta.env.DEV,
+  currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
+  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
+  buildTimestamp: '2025-08-27T19:30:00Z',
+  version: '1.0.2'
+};
+
+console.log('=== API Configuration v1.0.2 ===', apiConfig);
+
+// Additional network debugging
+if (typeof window !== 'undefined') {
+  console.log('Network Environment:', {
+    online: navigator.onLine,
+    url: window.location.href,
+    protocol: window.location.protocol,
+    host: window.location.host
+  });
+}
 
 // Only add interceptors for real axios instance
 if (!MOCK_MODE) {
   // Request interceptor to add auth token
   api.interceptors.request.use(
     (config) => {
-      console.log('API Request:', config.method?.toUpperCase(), config.url, config.data)
-      const token = Cookies.get('token')
+      const token = Cookies.get('token');
+      const fullUrl = config.baseURL + config.url;
+      
+      console.log('=== API Request Details ===', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        fullUrl: fullUrl,
+        baseURL: config.baseURL,
+        data: config.data,
+        headers: config.headers,
+        hasToken: !!token,
+        timestamp: new Date().toISOString()
+      });
+      
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`
+        config.headers.Authorization = `Bearer ${token}`;
       }
-      return config
+      
+      return config;
     },
     (error) => {
-      console.error('API Request Error:', error)
-      return Promise.reject(error)
+      console.error('=== API Request Setup Error ===', {
+        message: error.message,
+        config: error.config,
+        timestamp: new Date().toISOString()
+      });
+      return Promise.reject(error);
     }
   )
 }
@@ -119,17 +179,31 @@ if (!MOCK_MODE) {
   // Response interceptor to handle token refresh
   api.interceptors.response.use(
     (response) => {
-      console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status);
+      console.log('=== API Response Success ===', {
+        method: response.config.method?.toUpperCase(),
+        url: response.config.url,
+        fullUrl: response.config.baseURL + response.config.url,
+        status: response.status,
+        statusText: response.statusText,
+        dataType: typeof response.data,
+        dataLength: JSON.stringify(response.data).length,
+        headers: response.headers,
+        timestamp: new Date().toISOString()
+      });
       return response;
     },
     async (error) => {
-      console.error('API Error:', {
+      console.error('=== API Response Error ===', {
         url: error.config?.url,
+        fullUrl: error.config ? (error.config.baseURL + error.config.url) : 'unknown',
         method: error.config?.method,
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
-        message: error.message
+        message: error.message,
+        code: error.code,
+        isNetworkError: !error.response,
+        timestamp: new Date().toISOString()
       });
       
       const originalRequest = error.config
@@ -146,10 +220,15 @@ if (!MOCK_MODE) {
           
           return api(originalRequest)
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          Cookies.remove('token')
-          window.location.href = '/auth/login'
-          return Promise.reject(refreshError)
+          console.error('=== Token Refresh Failed ===', {
+            error: refreshError.message,
+            status: refreshError.response?.status,
+            data: refreshError.response?.data,
+            timestamp: new Date().toISOString()
+          });
+          Cookies.remove('token');
+          window.location.href = '/auth/login';
+          return Promise.reject(refreshError);
         }
       }
 
