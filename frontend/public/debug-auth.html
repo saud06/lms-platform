@@ -115,6 +115,11 @@
                 return currentUrl.replace('lms-frontend', 'lms-backend');
             }
             
+            // For Render deployment pattern
+            if (currentUrl.includes('onrender.com')) {
+                return currentUrl.replace('lms-frontend', 'lms-backend');
+            }
+            
             // For local development
             if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
                 return 'http://127.0.0.1:8000';

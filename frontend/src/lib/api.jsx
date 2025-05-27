@@ -4,6 +4,17 @@ import Cookies from 'js-cookie'
 // Mock API for testing when backend is unavailable
 const MOCK_MODE = false;
 
+// Debug environment variables immediately
+console.log('=== Environment Debug at Module Load ===', {
+  'import.meta.env': import.meta.env,
+  'import.meta.env.DEV': import.meta.env.DEV,
+  'import.meta.env.PROD': import.meta.env.PROD,
+  'import.meta.env.MODE': import.meta.env.MODE,
+  'import.meta.env.VITE_API_URL': import.meta.env.VITE_API_URL,
+  'window.location.href': typeof window !== 'undefined' ? window.location.href : 'SSR',
+  timestamp: new Date().toISOString()
+});
+
 const mockUsers = [
   { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
   { id: 2, name: 'Instructor User', email: 'instructor@example.com', role: 'instructor' },
@@ -69,42 +80,73 @@ const getBaseURL = () => {
   const isDev = import.meta.env.DEV;
   const isProd = import.meta.env.PROD;
   const viteApiUrl = import.meta.env.VITE_API_URL;
+  const mode = import.meta.env.MODE;
   
-  console.log('API URL Detection:', {
+  console.log('=== API URL Detection v1.0.3 ===', {
     isDev,
     isProd,
     viteApiUrl,
-    mode: import.meta.env.MODE,
+    mode,
+    hasWindow: typeof window !== 'undefined',
+    currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
     timestamp: new Date().toISOString()
   });
   
+  // Force production mode detection for deployed apps
+  const isDeployedProduction = typeof window !== 'undefined' && 
+    (window.location.origin.includes('onrender.com') || 
+     window.location.origin.includes('netlify.app') || 
+     window.location.origin.includes('vercel.app'));
+  
+  // TEMPORARY: Hardcode backend URL for Render deployment debugging
+  if (typeof window !== 'undefined' && window.location.origin.includes('onrender.com')) {
+    // Use the service naming pattern from render.yaml: lms-backend
+    const hardcodedBackendUrl = window.location.origin.replace('lms-frontend', 'lms-backend') + '/api';
+    console.log('TEMPORARY: Using hardcoded backend URL for debugging ->', hardcodedBackendUrl);
+    return hardcodedBackendUrl;
+  }
+  
+  console.log('Production Detection:', {
+    isDeployedProduction,
+    isProdEnv: isProd,
+    finalIsProduction: isProd || isDeployedProduction
+  });
+  
   // In development, use the Vite proxy setup
-  if (isDev) {
+  if (isDev && !isDeployedProduction) {
+    console.log('Using development proxy: /api');
     return '/api';
   }
   
-  // In production, determine the backend URL
-  if (isProd) {
+  // In production or deployed environment
+  if (isProd || isDeployedProduction) {
     // If VITE_API_URL is set, use it (for Render deployment)
-    if (viteApiUrl) {
+    if (viteApiUrl && viteApiUrl !== 'undefined') {
       const backendUrl = `${viteApiUrl}/api`;
       console.log('Production: Using VITE_API_URL ->', backendUrl);
       return backendUrl;
     }
     
     // Fallback: try to infer backend URL from current domain
-    const currentUrl = window.location.origin;
-    const backendUrl = currentUrl.replace('lms-frontend', 'lms-backend');
-    console.log('Production: Inferred backend URL ->', backendUrl + '/api');
-    return `${backendUrl}/api`;
+    if (typeof window !== 'undefined') {
+      const currentUrl = window.location.origin;
+      const backendUrl = currentUrl.replace('lms-frontend', 'lms-backend');
+      console.log('Production: Inferred backend URL ->', backendUrl + '/api');
+      return `${backendUrl}/api`;
+    }
   }
   
-  // Fallback
+  // Final fallback
+  console.log('Using fallback: /api');
   return '/api';
 };
 
+// Get the base URL immediately for debugging
+const detectedBaseURL = getBaseURL();
+console.log('=== Final API Base URL ===', detectedBaseURL);
+
 const api = MOCK_MODE ? mockAPI : axios.create({
-  baseURL: getBaseURL(),
+  baseURL: detectedBaseURL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -115,18 +157,19 @@ const api = MOCK_MODE ? mockAPI : axios.create({
 // Log the API configuration for debugging
 const apiConfig = {
   mockMode: MOCK_MODE,
-  baseURL: getBaseURL(),
+  detectedBaseURL: detectedBaseURL,
+  actualApiBaseURL: api.defaults?.baseURL,
   environment: import.meta.env.MODE,
   viteApiUrl: import.meta.env.VITE_API_URL,
   isProduction: import.meta.env.PROD,
   isDevelopment: import.meta.env.DEV,
   currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
-  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
-  buildTimestamp: '2025-08-27T19:30:00Z',
-  version: '1.0.2'
+  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'SSR',
+  buildTimestamp: '2025-08-27T19:45:00Z',
+  version: '1.0.3'
 };
 
-console.log('=== API Configuration v1.0.2 ===', apiConfig);
+console.log('=== API Configuration v1.0.3 ===', apiConfig);
 
 // Additional network debugging
 if (typeof window !== 'undefined') {
