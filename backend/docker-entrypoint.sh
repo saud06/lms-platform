@@ -45,15 +45,16 @@ fi
 
 # Cache configuration
 echo "Caching configuration..."
+composer dump-autoload --optimize
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-until php artisan migrate:status 2>/dev/null; do
+until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" 2>/dev/null; do
     echo "Database not ready, waiting..."
-    sleep 2
+    sleep 5
 done
 
 echo "Database is ready, running migrations..."
