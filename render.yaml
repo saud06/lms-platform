@@ -60,10 +60,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: lms-frontend
-          property: url
+        value: ""
 
   # Frontend React Application (Static Site)
   - type: web
@@ -77,10 +74,7 @@ services:
         value: production
       # Backend URL - using the actual service URL from Render
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: lms-backend
-          property: url
+        value: ""
 
 # Database
 databases:
