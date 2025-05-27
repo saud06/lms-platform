@@ -905,21 +905,23 @@ Route::get('/courses/{id}', function ($id) {
 // ---------------------------------------------------------------------------
 
 // Helper: ensure a quiz exists for a course
-function ensureCourseQuiz($courseId): Quiz {
-    $quiz = Quiz::where('course_id', $courseId)->first();
-    if (!$quiz) {
-        $quiz = Quiz::create([
-            'course_id' => $courseId,
-            'title' => 'Course Quiz',
-            'description' => null,
-            'time_limit' => 0,
-            'max_attempts' => 0,
-            'passing_score' => 60,
-            'is_active' => true,
-            'order' => 1,
-        ]);
+if (!function_exists('ensureCourseQuiz')) {
+    function ensureCourseQuiz($courseId): Quiz {
+        $quiz = Quiz::where('course_id', $courseId)->first();
+        if (!$quiz) {
+            $quiz = Quiz::create([
+                'course_id' => $courseId,
+                'title' => 'Course Quiz',
+                'description' => null,
+                'time_limit' => 0,
+                'max_attempts' => 0,
+                'passing_score' => 60,
+                'is_active' => true,
+                'order' => 1,
+            ]);
+        }
+        return $quiz;
     }
-    return $quiz;
 }
 
 // GET /courses/{courseId}/quiz - returns quiz questions in simplified shape

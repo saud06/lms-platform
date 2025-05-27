@@ -65,7 +65,7 @@ php artisan route:cache || echo "Route cache failed, continuing..."
 php artisan view:cache || echo "View cache failed, continuing..."
 
 # Wait for database to be ready (with timeout)
-echo "Waiting for database to be ready...
+echo "Waiting for database to be ready..."
 DATABASE_WAIT_TIMEOUT=60
 DATABASE_WAIT_COUNT=0
 until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" 2>/dev/null; do
@@ -93,7 +93,7 @@ fi
 
 # Seed the database if it's empty (with error handling)
 echo "Checking if database needs seeding..."
-USER_COUNT=$(php artisan tinker --execute='echo \App\Models\User::count();' 2>/dev/null || echo "0")
+USER_COUNT=$(php artisan tinker --execute="echo App\\Models\\User::count();" 2>/dev/null || echo "0")
 echo "Current user count: $USER_COUNT"
 
 if [ "$USER_COUNT" -eq "0" ]; then
