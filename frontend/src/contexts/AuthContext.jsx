@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      console.log('=== AuthContext Login Attempt v1.0.2 ===', {
+      console.log('=== AuthContext Login Attempt v1.0.3 ===', {
         email,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
@@ -92,12 +92,22 @@ export function AuthProvider({ children }) {
         dataType: typeof response.data,
         dataKeys: Object.keys(response.data || {}),
         data: response.data,
+        responseText: typeof response.data === 'string' ? response.data.substring(0, 200) : 'N/A',
         timestamp: new Date().toISOString()
       });
       
       // Check if response has the expected structure
       if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format: expected object, got ' + typeof response.data);
+        console.error('=== Invalid Response Details ===', {
+          responseType: typeof response.data,
+          responseContent: response.data,
+          contentLength: response.data ? String(response.data).length : 0,
+          isHtml: typeof response.data === 'string' && response.data.includes('<html>'),
+          is404: typeof response.data === 'string' && response.data.includes('404'),
+          requestUrl: response.config?.url,
+          fullRequestUrl: response.config?.baseURL + response.config?.url
+        });
+        throw new Error(`Invalid response format: expected object, got ${typeof response.data}. Content: ${String(response.data).substring(0, 100)}`);
       }
       
       const { user, token } = response.data;
@@ -132,9 +142,11 @@ export function AuthProvider({ children }) {
         status: error.response?.status,
         statusText: error.response?.statusText,
         responseData: error.response?.data,
+        responseText: typeof error.response?.data === 'string' ? error.response.data.substring(0, 200) : 'N/A',
         requestUrl: error.config?.url,
         requestMethod: error.config?.method,
         requestData: error.config?.data,
+        fullRequestUrl: error.config ? (error.config.baseURL + error.config.url) : 'unknown',
         isNetworkError: !error.response,
         timestamp: new Date().toISOString()
       });

@@ -100,8 +100,26 @@ const getBaseURL = () => {
   
   // TEMPORARY: Hardcode backend URL for Render deployment debugging
   if (typeof window !== 'undefined' && window.location.origin.includes('onrender.com')) {
-    // Use the service naming pattern from render.yaml: lms-backend
-    const hardcodedBackendUrl = window.location.origin.replace('lms-frontend', 'lms-backend') + '/api';
+    const currentOrigin = window.location.origin;
+    console.log('=== Render Deployment Detection ===', {
+      currentOrigin,
+      hostname: window.location.hostname
+    });
+    
+    // Try multiple backend URL patterns
+    const backendPatterns = [
+      // Pattern 1: Simple replacement lms-frontend -> lms-backend
+      currentOrigin.replace('lms-frontend', 'lms-backend'),
+      // Pattern 2: If service has random suffix, try common patterns
+      currentOrigin.replace(/lms-frontend-[^.]+/, 'lms-backend'),
+      // Pattern 3: If above fails, construct from service name in render.yaml
+      'https://lms-backend.onrender.com'
+    ];
+    
+    console.log('=== Backend URL Patterns to Try ===', backendPatterns);
+    
+    // For now, use the first pattern and add debugging
+    const hardcodedBackendUrl = backendPatterns[0] + '/api';
     console.log('TEMPORARY: Using hardcoded backend URL for debugging ->', hardcodedBackendUrl);
     return hardcodedBackendUrl;
   }
@@ -144,6 +162,18 @@ const getBaseURL = () => {
 // Get the base URL immediately for debugging
 const detectedBaseURL = getBaseURL();
 console.log('=== Final API Base URL ===', detectedBaseURL);
+
+// Quick validation of the detected URL
+if (typeof window !== 'undefined') {
+  console.log('=== Backend URL Validation ===', {
+    detectedURL: detectedBaseURL,
+    isHttps: detectedBaseURL.startsWith('https://'),
+    hasOnRender: detectedBaseURL.includes('onrender.com'),
+    hasApiPath: detectedBaseURL.includes('/api'),
+    currentDomain: window.location.hostname,
+    expectedBackendDomain: window.location.hostname.replace('lms-frontend', 'lms-backend')
+  });
+}
 
 const api = MOCK_MODE ? mockAPI : axios.create({
   baseURL: detectedBaseURL,
