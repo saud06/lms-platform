@@ -7,12 +7,15 @@ import { toYouTubeEmbed } from '../../lib/youtube'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import QuizEditor from '../../components/quiz/QuizEditor'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { formatCurrency } from '../../lib/utils'
 
  
 
 export default function InstructorCourseView() {
   const { id } = useParams()
   const quizRef = useRef(null)
+  const { t } = useLanguage()
   const { data, isLoading, error } = useQuery({
     queryKey: ['instructor-course', id],
     queryFn: async () => {
@@ -21,8 +24,8 @@ export default function InstructorCourseView() {
     }
   })
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div className="text-red-600">Failed to load course.</div>
+  if (isLoading) return <div>{t('common.loading', 'Loading...')}</div>
+  if (error) return <div className="text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
 
   const embed = toYouTubeEmbed(data.youtube_url)
 
@@ -32,33 +35,33 @@ export default function InstructorCourseView() {
         <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => quizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-            Open Quiz
+            {t('course.openQuiz', 'Open Quiz')}
           </Button>
           <Link to={`/instructor/courses/${id}/edit`}>
-            <Button variant="outline">Edit</Button>
+            <Button variant="outline">{t('common.edit', 'Edit')}</Button>
           </Link>
           <Link to="/instructor/courses">
-            <Button variant="secondary">Back</Button>
+            <Button variant="secondary">{t('common.back', 'Back')}</Button>
           </Link>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Course Details</CardTitle>
+          <CardTitle>{t('course.courseDetails', 'Course Details')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div><span className="font-medium">Status:</span> {data.status}</div>
-          <div><span className="font-medium">Category:</span> {data.category}</div>
-          <div><span className="font-medium">Level:</span> {data.level}</div>
-          <div><span className="font-medium">Price:</span> ${Number(data.price || 0).toFixed(2)}</div>
-          <div><span className="font-medium">Enrollments:</span> {data.enrollments}</div>
+          <div><span className="font-medium">{t('course.status', 'Status:')}</span> {data.status}</div>
+          <div><span className="font-medium">{t('course.category', 'Category:')}</span> {data.category}</div>
+          <div><span className="font-medium">{t('course.level', 'Level:')}</span> {data.level}</div>
+          <div><span className="font-medium">{t('course.price', 'Price:')}</span> {formatCurrency(Number(data.price || 0))}</div>
+          <div><span className="font-medium">{t('course.enrollments', 'Enrollments:')}</span> {data.enrollments}</div>
           <div>
-            <span className="font-medium">Description:</span>
+            <span className="font-medium">{t('course.description', 'Description:')}</span>
             <p className="text-gray-700 mt-1 whitespace-pre-wrap">{data.description}</p>
           </div>
           <div className="pt-2">
-            <span className="font-medium">Learning Material:</span>
+            <span className="font-medium">{t('course.learningMaterial', 'Learning Material')}</span>
             {embed && (
               <div className="relative w-full mt-2 rounded overflow-hidden" style={{ paddingTop: '56.25%' }}>
                 <iframe
@@ -73,7 +76,7 @@ export default function InstructorCourseView() {
             {data.learning_material ? (
               <div className="prose max-w-none text-gray-800 mt-2" dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.learning_material) }} />
             ) : (
-              <p className="text-muted-foreground mt-2">No learning material added yet.</p>
+              <p className="text-muted-foreground mt-2">{t('course.noLearningMaterial', 'No learning material added yet.')}</p>
             )}
           </div>
         </CardContent>
@@ -81,7 +84,7 @@ export default function InstructorCourseView() {
 
       <Card ref={quizRef}>
         <CardHeader>
-          <CardTitle>Course Quiz</CardTitle>
+          <CardTitle>{t('course.quiz', 'Quiz')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QuizEditor courseId={id} />

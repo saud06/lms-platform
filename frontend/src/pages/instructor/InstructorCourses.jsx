@@ -13,6 +13,8 @@ import 'react-quill/dist/quill.snow.css'
 import { toYouTubeEmbed } from '../../lib/youtube'
 import { sanitizeHtml } from '../../lib/sanitize'
 import QuizEditor from '../../components/quiz/QuizEditor'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { formatCurrency } from '../../lib/utils'
 
 const validate = (f) => {
   const e = {}
@@ -29,6 +31,7 @@ export default function InstructorCourses() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { toast } = useToast()
+  const { t } = useLanguage()
   const [isModalOpen, setModalOpen] = useState(false)
   const [isViewOpen, setViewOpen] = useState(false)
   const [isQuizOpen, setQuizOpen] = useState(false)
@@ -165,18 +168,18 @@ export default function InstructorCourses() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">My Courses</h1>
-        <Button onClick={openAdd}><Plus className="h-4 w-4 mr-2"/>Create Course</Button>
+        <h1 className="text-3xl font-bold text-gray-900">{t('instructor.courses.myCourses', 'My Courses')}</h1>
+        <Button onClick={openAdd}><Plus className="h-4 w-4 mr-2"/>{t('instructor.courses.create', 'Create Course')}</Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Courses</CardTitle>
+          <CardTitle>{t('nav.courses', 'Courses')}</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading && <div>Loading...</div>}
+          {isLoading && <div>{t('common.loading', 'Loading...')}</div>}
           {!isLoading && (!data || data.length === 0) && (
-            <p className="text-sm text-muted-foreground">No courses yet.</p>
+            <p className="text-sm text-muted-foreground">{t('instructor.courses.empty', 'No courses yet.')}</p>
           )}
           <div className="grid md:grid-cols-2 gap-4">
             {filtered?.map((c) => (
@@ -187,9 +190,9 @@ export default function InstructorCourses() {
                 </div>
                 <p className="text-sm text-gray-600">{c.category}</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => openView(c)}><Eye className="h-4 w-4 mr-1"/>View</Button>
-                  <Button size="sm" variant="outline" onClick={() => openQuiz(c)}>Quiz</Button>
-                  <Button size="sm" variant="outline" onClick={() => openEdit(c)}><Edit className="h-4 w-4 mr-1"/>Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => openView(c)}><Eye className="h-4 w-4 mr-1"/>{t('common.view', 'View')}</Button>
+                  <Button size="sm" variant="outline" onClick={() => openQuiz(c)}>{t('course.quiz', 'Quiz')}</Button>
+                  <Button size="sm" variant="outline" onClick={() => openEdit(c)}><Edit className="h-4 w-4 mr-1"/>{t('common.edit', 'Edit')}</Button>
                 </div>
               </div>
             ))}
@@ -200,19 +203,19 @@ export default function InstructorCourses() {
       <Modal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingCourse ? 'Edit Course' : 'Add Course'}
+        title={editingCourse ? t('instructor.courses.editTitle', 'Edit Course') : t('instructor.courses.addTitle', 'Add Course')}
         footer={(
           <>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
             <Button onClick={onSubmit} disabled={addMutation.isPending || editMutation.isPending}>
-              {editingCourse ? (editMutation.isPending ? 'Saving...' : 'Save') : (addMutation.isPending ? 'Adding...' : 'Add')}
+              {editingCourse ? (editMutation.isPending ? t('common.saving', 'Saving...') : t('common.save', 'Save')) : (addMutation.isPending ? t('common.adding', 'Adding...') : t('common.add', 'Add'))}
             </Button>
           </>
         )}
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.title', 'Title')}</label>
             <Input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -223,7 +226,7 @@ export default function InstructorCourses() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.category', 'Category')}</label>
               <Input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -233,22 +236,22 @@ export default function InstructorCourses() {
               {errors.category && (touched.category || submitted) && (<p className="mt-1 text-xs text-red-600">{errors.category}</p>)}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.status', 'Status')}</label>
               <select
                 className="w-full border rounded-md h-10 px-3 text-sm"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 onBlur={() => setTouched(prev => ({ ...prev, status: true }))}
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="draft">{t('course.statusDraft', 'Draft')}</option>
+                <option value="published">{t('course.statusPublished', 'Published')}</option>
+                <option value="archived">{t('course.statusArchived', 'Archived')}</option>
               </select>
               {errors.status && (touched.status || submitted) && (<p className="mt-1 text-xs text-red-600">{errors.status}</p>)}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.price', 'Price')}</label>
             <Input
               type="number"
               step="0.01"
@@ -260,18 +263,18 @@ export default function InstructorCourses() {
             {errors.price && (touched.price || submitted) && (<p className="mt-1 text-xs text-red-600">{errors.price}</p>)}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Learning Material</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.learningMaterial', 'Learning Material')}</label>
             <ReactQuill
               theme="snow"
               value={form.learning_material}
               onChange={(html) => setForm({ ...form, learning_material: html })}
-              placeholder="Add lesson notes, text, and resources..."
+              placeholder={t('course.learningMaterial.placeholder', 'Add lesson notes, text, and resources...')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.youtubeUrlLabel', 'YouTube Video URL (optional)')}</label>
             <Input
-              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+              placeholder={t('course.youtubeUrlPlaceholder', 'https://www.youtube.com/watch?v=... or https://youtu.be/...')}
               value={form.youtube_url}
               onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
             />
@@ -285,19 +288,19 @@ export default function InstructorCourses() {
         title={viewCourse ? viewCourse.title : 'Course'}
         footer={(
           <>
-            <Button variant="outline" onClick={() => setViewOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>{t('common.close', 'Close')}</Button>
           </>
         )}
       >
         {viewCourse ? (
           <div className="space-y-4 text-sm">
             <div className="space-y-2">
-              <div><span className="font-medium">Status:</span> {viewCourse.status}</div>
-              <div><span className="font-medium">Category:</span> {viewCourse.category}</div>
-              <div><span className="font-medium">Price:</span> ${Number(viewCourse.price||0).toFixed(2)}</div>
+              <div><span className="font-medium">{t('course.status', 'Status:')}</span> {viewCourse.status}</div>
+              <div><span className="font-medium">{t('course.category', 'Category:')}</span> {viewCourse.category}</div>
+              <div><span className="font-medium">{t('course.price', 'Price:')}</span> {formatCurrency(Number(viewCourse.price||0))}</div>
               {viewCourse.description && (
                 <div>
-                  <span className="font-medium">Description:</span>
+                  <span className="font-medium">{t('course.description', 'Description:')}</span>
                   <p className="text-gray-700 mt-1 whitespace-pre-wrap">{viewCourse.description}</p>
                 </div>
               )}
@@ -319,7 +322,7 @@ export default function InstructorCourses() {
                   </div>
                   <div className="mt-2 text-xs">
                     <a className="text-blue-600 hover:underline" href={viewCourse.youtube_url} target="_blank" rel="noreferrer">
-                      Watch on YouTube
+                      {t('course.watchOnYouTube', 'Watch on YouTube')}
                     </a>
                   </div>
                 </div>
@@ -330,21 +333,21 @@ export default function InstructorCourses() {
             {viewCourse.learning_material ? (
               <div className="prose max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewCourse.learning_material) }} />
             ) : (
-              <p className="text-muted-foreground">No learning material added yet.</p>
+              <p className="text-muted-foreground">{t('course.noLearningMaterial', 'No learning material added yet.')}</p>
             )}
           </div>
         ) : (
-          <div>Loading...</div>
+          <div>{t('common.loading', 'Loading...')}</div>
         )}
       </Modal>
 
       <Modal
         open={isQuizOpen}
         onClose={() => setQuizOpen(false)}
-        title={quizCourse ? `${quizCourse.title} — Quiz` : 'Quiz'}
+        title={quizCourse ? `${quizCourse.title} — ${t('course.quiz', 'Quiz')}` : t('course.quiz', 'Quiz')}
         footer={(
           <>
-            <Button variant="outline" onClick={() => setQuizOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setQuizOpen(false)}>{t('common.close', 'Close')}</Button>
           </>
         )}
       >
@@ -353,7 +356,7 @@ export default function InstructorCourses() {
             <QuizEditor courseId={quizCourse.id} />
           </div>
         ) : (
-          <div>Loading...</div>
+          <div>{t('common.loading', 'Loading...')}</div>
         )}
       </Modal>
     </div>

@@ -15,6 +15,7 @@ import Modal from '../../components/ui/Modal'
 import { toYouTubeEmbed } from '../../lib/youtube'
 import { sanitizeHtml } from '../../lib/sanitize'
 import QuizEditor from '../../components/quiz/QuizEditor'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export default function ManageCourses() {
   const navigate = useNavigate()
@@ -32,6 +33,7 @@ export default function ManageCourses() {
   const [touched, setTouched] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const { toast } = useToast()
+  const { t } = useLanguage()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-courses'],
@@ -52,7 +54,7 @@ export default function ManageCourses() {
     mutationFn: (payload) => api.post('/admin/courses', payload).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
-      toast({ title: 'Course added', description: `${form.title} has been created.` })
+      toast({ title: t('admin.manageCourses.toast.addedTitle', 'Course added'), description: t('admin.manageCourses.toast.addedDesc', '{title} has been created.', { title: form.title }) })
       setErrors({})
       setTouched({})
       setSubmitted(false)
@@ -60,14 +62,14 @@ export default function ManageCourses() {
     onError: (err) => {
       const data = err?.response?.data
       if (data?.errors) setErrors(Object.fromEntries(Object.entries(data.errors).map(([k,v]) => [k, v[0]])))
-      toast({ title: 'Failed to add course', description: data?.message || 'Please fix errors and try again.', variant: 'destructive' })
+      toast({ title: t('admin.manageCourses.toast.addFailedTitle', 'Failed to add course'), description: data?.message || t('common.fixErrors', 'Please fix errors and try again.'), variant: 'destructive' })
     }
   })
   const editMutation = useMutation({
     mutationFn: ({ id, payload }) => api.put(`/admin/courses/${id}`, payload).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
-      toast({ title: 'Course updated', description: `${form.title} has been saved.` })
+      toast({ title: t('admin.manageCourses.toast.updatedTitle', 'Course updated'), description: t('admin.manageCourses.toast.updatedDesc', '{title} has been saved.', { title: form.title }) })
       setErrors({})
       setTouched({})
       setSubmitted(false)
@@ -75,14 +77,14 @@ export default function ManageCourses() {
     onError: (err) => {
       const data = err?.response?.data
       if (data?.errors) setErrors(Object.fromEntries(Object.entries(data.errors).map(([k,v]) => [k, v[0]])))
-      toast({ title: 'Failed to update course', description: data?.message || 'Please fix errors and try again.', variant: 'destructive' })
+      toast({ title: t('admin.manageCourses.toast.updateFailedTitle', 'Failed to update course'), description: data?.message || t('common.fixErrors', 'Please fix errors and try again.'), variant: 'destructive' })
     }
   })
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/courses/${id}`).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
-      toast({ title: 'Course deleted', description: 'The course has been removed.' })
+      toast({ title: t('admin.manageCourses.toast.deletedTitle', 'Course deleted'), description: t('admin.manageCourses.toast.deletedDesc', 'The course has been removed.') })
     }
   })
 
@@ -159,12 +161,12 @@ export default function ManageCourses() {
 
   const validateCourse = (f) => {
     const e = {}
-    if (!f.title || f.title.trim().length < 3) e.title = 'Title is required (min 3 characters)'
-    if (!f.instructor || f.instructor.trim().length < 2) e.instructor = 'Instructor is required'
-    if (!f.category || f.category.trim().length < 2) e.category = 'Category is required'
-    if (!['draft','published','archived'].includes(f.status)) e.status = 'Status must be draft, published, or archived'
+    if (!f.title || f.title.trim().length < 3) e.title = t('validation.titleRequired', 'Title is required (min 3 characters)')
+    if (!f.instructor || f.instructor.trim().length < 2) e.instructor = t('validation.instructorRequired', 'Instructor is required')
+    if (!f.category || f.category.trim().length < 2) e.category = t('validation.categoryRequired', 'Category is required')
+    if (!['draft','published','archived'].includes(f.status)) e.status = t('validation.statusInvalid', 'Status must be draft, published, or archived')
     const priceNum = Number(f.price)
-    if (Number.isNaN(priceNum) || priceNum < 0) e.price = 'Price must be a non-negative number'
+    if (Number.isNaN(priceNum) || priceNum < 0) e.price = t('validation.priceInvalid', 'Price must be a non-negative number')
     return e
   }
 
@@ -183,23 +185,23 @@ export default function ManageCourses() {
   }
 
   const onDelete = async (course) => {
-    if (!confirm(`Delete ${course.title}?`)) return
+    if (!confirm(t('admin.manageCourses.confirmDelete', 'Delete {title}?', { title: course.title }))) return
     await deleteMutation.mutateAsync(course.id)
   }
 
-  if (isLoading) return <div>Loading courses...</div>
-  if (isError) return <div>Failed to load courses</div>
+  if (isLoading) return <div>{t('admin.manageCourses.loading', 'Loading courses...')}</div>
+  if (isError) return <div>{t('admin.manageCourses.loadFailed', 'Failed to load courses')}</div>
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Courses</h1>
-          <p className="text-gray-600">Manage platform courses and content</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('admin.manageCourses.title', 'Manage Courses')}</h1>
+          <p className="text-gray-600">{t('admin.manageCourses.subtitle', 'Manage platform courses and content')}</p>
         </div>
         <Button onClick={openAdd} disabled={addMutation.isPending}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Course
+          {t('admin.manageCourses.addCourse', 'Add Course')}
         </Button>
       </div>
 
@@ -208,9 +210,9 @@ export default function ManageCourses() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <BookOpen className="mr-2 h-5 w-5" />
-            Courses ({filteredCourses.length})
+            {t('admin.manageCourses.courses', 'Courses')} ({filteredCourses.length})
           </CardTitle>
-          <CardDescription>Search and manage all platform courses</CardDescription>
+          <CardDescription>{t('admin.manageCourses.searchManageDesc', 'Search and manage all platform courses')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4 mb-6">
@@ -218,7 +220,7 @@ export default function ManageCourses() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search courses by title, instructor, or category..."
+                placeholder={t('admin.manageCourses.searchPlaceholder', 'Search courses by title, instructor, or category...')}
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -231,13 +233,13 @@ export default function ManageCourses() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium">Course</th>
-                  <th className="text-left py-3 px-4 font-medium">Instructor</th>
-                  <th className="text-left py-3 px-4 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 font-medium">Enrollments</th>
-                  <th className="text-left py-3 px-4 font-medium">Price</th>
-                  <th className="text-left py-3 px-4 font-medium">Created</th>
-                  <th className="text-right py-3 px-4 font-medium">Actions</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.course', 'Course')}</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.instructor', 'Instructor')}</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.status', 'Status')}</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.enrollments', 'Enrollments')}</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.price', 'Price')}</th>
+                  <th className="text-left py-3 px-4 font-medium">{t('admin.manageCourses.table.created', 'Created')}</th>
+                  <th className="text-right py-3 px-4 font-medium">{t('admin.manageCourses.table.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -254,7 +256,7 @@ export default function ManageCourses() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge className={getStatusBadgeColor(course.status)}>
-                        {course.status}
+                        {t(`course.status.${course.status}`,'{status}', { status: course.status })}
                       </Badge>
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-900">
@@ -272,7 +274,7 @@ export default function ManageCourses() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => openQuiz(course)}>
-                          Quiz
+                          {t('admin.manageCourses.quiz', 'Quiz')}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => openEdit(course)} disabled={editMutation.isPending}>
                           <Edit className="h-4 w-4" />
@@ -293,19 +295,19 @@ export default function ManageCourses() {
       <Modal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingCourse ? 'Edit Course' : 'Add Course'}
+        title={editingCourse ? t('admin.manageCourses.editCourse', 'Edit Course') : t('admin.manageCourses.addCourse', 'Add Course')}
         footer={(
           <>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
             <Button onClick={onSubmit} disabled={addMutation.isPending || editMutation.isPending}>
-              {editingCourse ? (editMutation.isPending ? 'Saving...' : 'Save') : (addMutation.isPending ? 'Adding...' : 'Add')}
+              {editingCourse ? (editMutation.isPending ? t('common.saving', 'Saving...') : t('common.save', 'Save')) : (addMutation.isPending ? t('common.adding', 'Adding...') : t('common.add', 'Add'))}
             </Button>
           </>
         )}
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.title', 'Title')}</label>
             <Input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -316,7 +318,7 @@ export default function ManageCourses() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.instructor', 'Instructor')}</label>
               <Input
                 value={form.instructor}
                 onChange={(e) => setForm({ ...form, instructor: e.target.value })}
@@ -326,7 +328,7 @@ export default function ManageCourses() {
               {errors.instructor && (touched.instructor || submitted) && (<p className="mt-1 text-xs text-red-600">{errors.instructor}</p>)}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.category', 'Category')}</label>
               <Input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -338,21 +340,21 @@ export default function ManageCourses() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.status', 'Status')}</label>
               <select
                 className="w-full border rounded-md h-10 px-3 text-sm"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 onBlur={() => setTouched(prev => ({ ...prev, status: true }))}
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="draft">{t('course.status.draft', 'Draft')}</option>
+                <option value="published">{t('course.status.published', 'Published')}</option>
+                <option value="archived">{t('course.status.archived', 'Archived')}</option>
               </select>
               {errors.status && (touched.status || submitted) && (<p className="mt-1 text-xs text-red-600">{errors.status}</p>)}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.price', 'Price')}</label>
               <Input
                 type="number"
                 step="0.01"
@@ -365,18 +367,18 @@ export default function ManageCourses() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Learning Material</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.learningMaterial', 'Learning Material')}</label>
             <ReactQuill
               theme="snow"
               value={form.learning_material}
               onChange={(html) => setForm({ ...form, learning_material: html })}
-              placeholder="Add lesson notes, text, and resources..."
+              placeholder={t('course.form.learningMaterial.placeholder', 'Add lesson notes, text, and resources...')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('course.form.youtubeUrl', 'YouTube Video URL (optional)')}</label>
             <Input
-              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+              placeholder={t('course.form.youtubeUrl.placeholder', 'https://www.youtube.com/watch?v=... or https://youtu.be/...')}
               value={form.youtube_url}
               onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
             />
@@ -387,27 +389,27 @@ export default function ManageCourses() {
       <Modal
         open={isViewOpen}
         onClose={() => setViewOpen(false)}
-        title={viewCourse ? viewCourse.title : 'Course'}
-        footer={<Button variant="outline" onClick={() => setViewOpen(false)}>Close</Button>}
+        title={viewCourse ? viewCourse.title : t('course.title', 'Course')}
+        footer={<Button variant="outline" onClick={() => setViewOpen(false)}>{t('common.close', 'Close')}</Button>}
       >
         {viewCourse ? (
           <div className="space-y-4 text-sm">
             <div className="space-y-2">
               {viewCourse.instructor && (
-                <div><span className="font-medium">Instructor:</span> {viewCourse.instructor}</div>
+                <div><span className="font-medium">{t('course.view.instructor', 'Instructor')}:</span> {viewCourse.instructor}</div>
               )}
-              <div><span className="font-medium">Status:</span> {viewCourse.status}</div>
-              <div><span className="font-medium">Category:</span> {viewCourse.category}</div>
+              <div><span className="font-medium">{t('course.view.status', 'Status')}:</span> {t(`course.status.${viewCourse.status}`,'{status}', { status: viewCourse.status })}</div>
+              <div><span className="font-medium">{t('course.view.category', 'Category')}:</span> {viewCourse.category}</div>
               {typeof viewCourse.level !== 'undefined' && (
-                <div><span className="font-medium">Level:</span> {viewCourse.level}</div>
+                <div><span className="font-medium">{t('course.view.level', 'Level')}:</span> {viewCourse.level}</div>
               )}
-              <div><span className="font-medium">Price:</span> {formatCurrency(Number(viewCourse.price||0))}</div>
+              <div><span className="font-medium">{t('course.view.price', 'Price')}:</span> {formatCurrency(Number(viewCourse.price||0))}</div>
               {typeof viewCourse.enrollments !== 'undefined' && (
-                <div><span className="font-medium">Enrollments:</span> {viewCourse.enrollments}</div>
+                <div><span className="font-medium">{t('course.view.enrollments', 'Enrollments')}:</span> {viewCourse.enrollments}</div>
               )}
               {viewCourse.description && (
                 <div>
-                  <span className="font-medium">Description:</span>
+                  <span className="font-medium">{t('course.view.description', 'Description')}:</span>
                   <p className="text-gray-700 mt-1 whitespace-pre-wrap">{viewCourse.description}</p>
                 </div>
               )}
@@ -422,14 +424,14 @@ export default function ManageCourses() {
                     <iframe
                       className="absolute inset-0 w-full h-full"
                       src={embed}
-                      title="Course Video"
+                      title={t('course.view.videoTitle', 'Course Video')}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                     />
                   </div>
                   <div className="mt-2 text-xs">
                     <a className="text-blue-600 hover:underline" href={viewCourse.youtube_url} target="_blank" rel="noreferrer">
-                      Watch on YouTube
+                      {t('course.view.watchOnYouTube', 'Watch on YouTube')}
                     </a>
                   </div>
                 </div>
@@ -440,26 +442,26 @@ export default function ManageCourses() {
             {viewCourse.learning_material ? (
               <div className="prose max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewCourse.learning_material) }} />
             ) : (
-              <p className="text-muted-foreground">No learning material added yet.</p>
+              <p className="text-muted-foreground">{t('course.view.noLearningMaterial', 'No learning material added yet.')}</p>
             )}
           </div>
         ) : (
-          <div>Loading...</div>
+          <div>{t('common.loading', 'Loading...')}</div>
         )}
       </Modal>
 
       <Modal
         open={isQuizOpen}
         onClose={() => setQuizOpen(false)}
-        title={quizCourse ? `${quizCourse.title} — Quiz` : 'Quiz'}
-        footer={<Button variant="outline" onClick={() => setQuizOpen(false)}>Close</Button>}
+        title={quizCourse ? `${quizCourse.title} — ${t('quiz.title', 'Quiz')}` : t('quiz.title', 'Quiz')}
+        footer={<Button variant="outline" onClick={() => setQuizOpen(false)}>{t('common.close', 'Close')}</Button>}
       >
         {quizCourse ? (
           <div className="space-y-4">
             <QuizEditor courseId={quizCourse.id} />
           </div>
         ) : (
-          <div>Loading...</div>
+          <div>{t('common.loading', 'Loading...')}</div>
         )}
       </Modal>
     </div>

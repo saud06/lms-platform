@@ -10,15 +10,17 @@ import {
   ClipboardList
 } from 'lucide-react'
 import { Button } from '../ui/button'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export default function Sidebar() {
   const { user, logout } = useAuth()
   const location = useLocation()
+  const { t } = useLanguage()
 
   const role = user?.role
   const navigation = [
     {
-      name: 'Dashboard',
+      name: t('nav.dashboard', 'Dashboard'),
       href:
         role === 'admin' ? '/admin/dashboard' :
         role === 'instructor' ? '/instructor/dashboard' :
@@ -27,13 +29,13 @@ export default function Sidebar() {
       roles: ['admin', 'instructor', 'student'],
     },
     {
-      name: 'Courses',
+      name: t('nav.courses', 'Courses'),
       href: role === 'admin' ? '/admin/courses' : (role === 'instructor' ? '/instructor/courses' : '/courses'),
       icon: BookOpen,
       roles: ['admin', 'instructor', 'student'],
     },
     {
-      name: 'Quizzes',
+      name: t('nav.quizzes', 'Quizzes'),
       href:
         role === 'admin' ? '/admin/quizzes' :
         role === 'instructor' ? '/instructor/quizzes' :
@@ -41,10 +43,10 @@ export default function Sidebar() {
       icon: ClipboardList,
       roles: ['admin', 'instructor', 'student'],
     },
-    { name: 'Users', href: '/admin/users', icon: Users, roles: ['admin'] },
-    { name: 'Students', href: '/instructor/students', icon: GraduationCap, roles: ['instructor'] },
+    { name: t('nav.users', 'Users'), href: '/admin/users', icon: Users, roles: ['admin'] },
+    { name: t('nav.students', 'Students'), href: '/instructor/students', icon: GraduationCap, roles: ['instructor'] },
     {
-      name: 'Settings',
+      name: t('nav.settings', 'Settings'),
       href: '/admin/settings',
       icon: Settings,
       roles: ['admin'],
@@ -58,7 +60,7 @@ export default function Sidebar() {
   return (
     <div className="bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold">LMS Platform</h1>
+        <h1 className="text-2xl font-semibold">{t('app.title', 'LMS Platform')}</h1>
         <p className="text-gray-400 text-sm mt-2">{user?.role}</p>
       </div>
 
@@ -93,7 +95,7 @@ export default function Sidebar() {
           className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Logout
+          {t('header.logout', 'Logout')}
         </Button>
       </div>
     </div>

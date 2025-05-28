@@ -7,9 +7,11 @@ import { BookOpen, Clock, Star, Play, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDuration } from '../../lib/utils'
 import { getQuizSummary } from '../../lib/quiz'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export default function StudentDashboard() {
   const [quizSummary, setQuizSummary] = useState({ coursesWithQuiz: 0, totalQuestions: 0, attempts: 0 })
+  const { t } = useLanguage()
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['student-dashboard'],
     queryFn: async () => {
@@ -30,21 +32,21 @@ export default function StudentDashboard() {
   }, [enrolled_courses])
 
   if (isLoading) {
-    return <div>Loading dashboard...</div>
+    return <div>{t('common.loading', 'Loading...')}</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-          <p className="text-gray-600">Continue your learning journey</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('student.dashboard.title', 'Student Dashboard')}</h1>
+          <p className="text-gray-600">{t('student.dashboard.subtitle', 'Continue your learning journey')}</p>
         </div>
         <div className="flex space-x-2">
           <Link to="/courses">
             <Button>
               <Search className="mr-2 h-4 w-4" />
-              Browse Courses
+              {t('student.browseCourses', 'Browse Courses')}
             </Button>
           </Link>
         </div>
@@ -54,33 +56,33 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.stats.enrolled', 'Enrolled Courses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.enrolled_courses || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.completed_courses || 0} completed
+              {stats?.completed_courses || 0} {t('student.stats.completed', 'completed')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Learning Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.stats.learningHours', 'Learning Hours')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_learning_hours || 0}h</div>
             <p className="text-xs text-muted-foreground">
-              This month
+              {t('student.stats.thisMonth', 'This month')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Rating</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.stats.avgRating', 'Avg. Rating')}</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -88,7 +90,7 @@ export default function StudentDashboard() {
               {stats?.average_rating ? stats.average_rating.toFixed(1) : '0.0'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Course ratings
+              {t('student.stats.courseRatings', 'Course ratings')}
             </p>
           </CardContent>
         </Card>
@@ -96,13 +98,13 @@ export default function StudentDashboard() {
         {/* Quizzes Summary (local) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quizzes</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('student.stats.quizzes', 'Quizzes')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{quizSummary.attempts} attempts</div>
+            <div className="text-2xl font-bold">{quizSummary.attempts} {t('student.stats.attempts', 'attempts')}</div>
             <p className="text-xs text-muted-foreground">
-              {quizSummary.coursesWithQuiz} courses • {quizSummary.totalQuestions} questions
+              {quizSummary.coursesWithQuiz} {t('student.stats.courses', 'courses')} • {quizSummary.totalQuestions} {t('student.stats.questions', 'questions')}
             </p>
           </CardContent>
         </Card>
@@ -112,8 +114,8 @@ export default function StudentDashboard() {
         {/* Continue Learning */}
         <Card>
           <CardHeader>
-            <CardTitle>Continue Learning</CardTitle>
-            <CardDescription>Pick up where you left off</CardDescription>
+            <CardTitle>{t('student.continueLearning.title', 'Continue Learning')}</CardTitle>
+            <CardDescription>{t('student.continueLearning.subtitle', 'Pick up where you left off')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {enrolled_courses?.slice(0, 3).map((enrollment) => (
@@ -127,20 +129,20 @@ export default function StudentDashboard() {
                     ></div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {enrollment.progress}% complete
+                    {enrollment.progress}% {t('student.progress.complete', 'complete')}
                   </p>
                 </div>
                 <Link to={`/courses/${enrollment.course.id}`}>
                   <Button size="sm">
                     <Play className="mr-2 h-4 w-4" />
-                    Continue
+                    {t('student.continue', 'Continue')}
                   </Button>
                 </Link>
               </div>
             ))}
             {(!enrolled_courses || enrolled_courses.length === 0) && (
               <p className="text-muted-foreground text-center py-4">
-                No enrolled courses yet. <Link to="/courses" className="text-primary hover:underline">Browse courses</Link>
+                {t('student.noEnrolled', 'No enrolled courses yet.')} <Link to="/courses" className="text-primary hover:underline">{t('student.browseCourses', 'Browse courses')}</Link>
               </p>
             )}
           </CardContent>
@@ -149,8 +151,8 @@ export default function StudentDashboard() {
         {/* Recommended Courses */}
         <Card>
           <CardHeader>
-            <CardTitle>Recommended for You</CardTitle>
-            <CardDescription>Based on your interests</CardDescription>
+            <CardTitle>{t('student.recommended.title', 'Recommended for You')}</CardTitle>
+            <CardDescription>{t('student.recommended.subtitle', 'Based on your interests')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recommended_courses?.slice(0, 3).map((course) => (
@@ -166,12 +168,12 @@ export default function StudentDashboard() {
                       <span className="text-xs ml-1">{course.rating || '0.0'}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {course.enrollments_count} students
+                      {course.enrollments_count} {t('student.recommended.students', 'students')}
                     </span>
                   </div>
                 </div>
                 <Link to={`/courses/${course.id}`}>
-                  <Button size="sm" variant="outline">View</Button>
+                  <Button size="sm" variant="outline">{t('common.view', 'View')}</Button>
                 </Link>
               </div>
             ))}
@@ -182,8 +184,8 @@ export default function StudentDashboard() {
       {/* Recent Progress */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your learning progress</CardDescription>
+          <CardTitle>{t('student.recentActivity.title', 'Recent Activity')}</CardTitle>
+          <CardDescription>{t('student.recentActivity.subtitle', 'Your learning progress')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -196,9 +198,9 @@ export default function StudentDashboard() {
                   </div>
                   <div className="text-sm">
                     {progress.completed_at ? (
-                      <span className="text-green-600 font-medium">Completed</span>
+                      <span className="text-green-600 font-medium">{t('student.recentActivity.completed', 'Completed')}</span>
                     ) : (
-                      <span className="text-blue-600 font-medium">In Progress</span>
+                      <span className="text-blue-600 font-medium">{t('student.recentActivity.inProgress', 'In Progress')}</span>
                     )}
                   </div>
                 </div>
@@ -209,7 +211,7 @@ export default function StudentDashboard() {
             ))}
             {(!recent_progress || recent_progress.length === 0) && (
               <p className="text-muted-foreground text-center py-4">
-                No recent activity yet.
+                {t('student.recentActivity.empty', 'No recent activity yet.')}
               </p>
             )}
           </div>

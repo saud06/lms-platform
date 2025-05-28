@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button'
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen } from 'lucide-react'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export default function StudentCourses() {
   const location = useLocation()
+  const { t } = useLanguage()
   const { data, isLoading, error } = useQuery({
     queryKey: ['student-courses'],
     queryFn: async () => {
@@ -29,18 +31,18 @@ export default function StudentCourses() {
     })
   }, [data, location.search])
 
-  if (isLoading) return <div>Loading your courses...</div>
-  if (error) return <div className="text-red-600">Failed to load courses.</div>
+  if (isLoading) return <div>{t('common.loading', 'Loading...')}</div>
+  if (error) return <div className="text-red-600">{t('common.failedToLoad', 'Failed to load.')}</div>
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Learning</h1>
-          <p className="text-gray-600">Your enrolled courses</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('student.myLearning.title', 'My Learning')}</h1>
+          <p className="text-gray-600">{t('student.myLearning.subtitle', 'Your enrolled courses')}</p>
         </div>
         <Link to="/courses">
-          <Button variant="outline">Browse Courses</Button>
+          <Button variant="outline">{t('student.browseCourses', 'Browse Courses')}</Button>
         </Link>
       </div>
 
@@ -61,16 +63,16 @@ export default function StudentCourses() {
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${enrollment.progress}%` }}></div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{enrollment.progress}% complete</p>
+                <p className="text-xs text-muted-foreground mt-1">{enrollment.progress}% {t('student.progress.complete', 'complete')}</p>
               </div>
               <Link to={`/courses/${enrollment.course.id}`}>
-                <Button size="sm" className="w-full">Continue</Button>
+                <Button size="sm" className="w-full">{t('student.continue', 'Continue')}</Button>
               </Link>
             </CardContent>
           </Card>
         ))}
         {(filtered?.length ?? 0) === 0 && (
-          <div className="col-span-full text-center text-muted-foreground">No enrolled courses yet.</div>
+          <div className="col-span-full text-center text-muted-foreground">{t('student.noEnrolled', 'No enrolled courses yet.')}</div>
         )}
       </div>
     </div>

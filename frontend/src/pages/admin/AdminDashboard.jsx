@@ -8,8 +8,10 @@ import { Link } from 'react-router-dom'
 import { formatCurrency } from '../../lib/utils'
 import { getQuizSummary } from '../../lib/quiz'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export default function AdminDashboard() {
+  const { t } = useLanguage()
   const [quizSummary, setQuizSummary] = useState({ coursesWithQuiz: 0, totalQuestions: 0, attempts: 0 })
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['admin-dashboard'],
@@ -31,27 +33,27 @@ export default function AdminDashboard() {
   }, [top_courses])
 
   if (isLoading) {
-    return <div>Loading dashboard...</div>
+    return <div>Loading...</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage your LMS platform and monitor performance</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.admin.title','Admin Dashboard')}</h1>
+          <p className="text-gray-600">{t('dashboard.admin.subtitle','Manage your LMS platform and monitor performance')}</p>
         </div>
         <div className="flex space-x-2">
           <Link to="/admin/users">
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
-              Manage Users
+              {t('dashboard.admin.manageUsers','Manage Users')}
             </Button>
           </Link>
           <Link to="/admin/courses">
             <Button variant="outline">
               <Plus className="mr-2 h-4 w-4" />
-              Manage Courses
+              {t('dashboard.admin.manageCourses','Manage Courses')}
             </Button>
           </Link>
         </div>
@@ -61,46 +63,46 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalUsers','Total Users')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.total_students || 0} students, {stats?.total_instructors || 0} instructors
+              {stats?.total_students || 0} {t('stats.students','students')}, {stats?.total_instructors || 0} {t('stats.instructors','instructors')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalCourses','Total Courses')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_courses || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.published_courses || 0} published
+              {stats?.published_courses || 0} {t('stats.published','published')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalEnrollments','Total Enrollments')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total_enrollments || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats?.completed_enrollments || 0} completed
+              {stats?.completed_enrollments || 0} {t('stats.completed','completed')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('stats.totalRevenue','Total Revenue')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -129,8 +131,8 @@ export default function AdminDashboard() {
         {/* Enrollment Trends */}
         <Card>
           <CardHeader>
-            <CardTitle>Enrollment Trends</CardTitle>
-            <CardDescription>Monthly enrollment statistics</CardDescription>
+            <CardTitle>{t('chart.enrollmentTrends.title','Enrollment Trends')}</CardTitle>
+            <CardDescription>{t('chart.enrollmentTrends.subtitle','Monthly enrollment statistics')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -153,8 +155,8 @@ export default function AdminDashboard() {
         {/* Top Courses */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Courses</CardTitle>
-            <CardDescription>Most enrolled courses</CardDescription>
+            <CardTitle>{t('topCourses.title','Top Courses')}</CardTitle>
+            <CardDescription>{t('topCourses.subtitle','Most enrolled courses')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {top_courses?.map((course, index) => (
@@ -165,7 +167,7 @@ export default function AdminDashboard() {
                 <div className="flex-1 space-y-1">
                   <h4 className="font-medium text-sm">{course.title}</h4>
                   <p className="text-xs text-muted-foreground">
-                    {course.enrollments_count} enrollments
+                    {course.enrollments_count} {t('topCourses.enrollments','enrollments')}
                   </p>
                 </div>
                 <Link to={`/admin/courses`}>
@@ -180,8 +182,8 @@ export default function AdminDashboard() {
       {/* Recent Enrollments */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Enrollments</CardTitle>
-          <CardDescription>Latest student enrollments</CardDescription>
+          <CardTitle>{t('recentEnrollments.title','Recent Enrollments')}</CardTitle>
+          <CardDescription>{t('recentEnrollments.subtitle','Latest student enrollments')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

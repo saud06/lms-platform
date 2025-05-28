@@ -8,12 +8,14 @@ import { sanitizeHtml } from '../../lib/sanitize'
 import { toYouTubeEmbed } from '../../lib/youtube'
 import ProgressBar from '../../components/ui/ProgressBar'
 import QuizRunner from '../../components/quiz/QuizRunner'
+import { useLanguage } from '../../contexts/LanguageContext'
 
  
 
 export default function StudentCourseView() {
   const { id } = useParams()
   const quizRef = useRef(null)
+  const { t } = useLanguage()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['course', id],
@@ -34,8 +36,8 @@ export default function StudentCourseView() {
     }
   })
 
-  if (isLoading) return <div>Loading course...</div>
-  if (isError || !data) return <div>Failed to load course.</div>
+  if (isLoading) return <div>{t('common.loading', 'Loading...')}</div>
+  if (isError || !data) return <div>{t('common.failedToLoad', 'Failed to load.')}</div>
 
   const embed = toYouTubeEmbed(data.youtube_url)
 
@@ -45,23 +47,23 @@ export default function StudentCourseView() {
         <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => quizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-            Open Quiz
+            {t('course.openQuiz', 'Open Quiz')}
           </Button>
           <Link to="/courses">
-            <Button variant="outline">Back to My Learning</Button>
+            <Button variant="outline">{t('course.backToMyLearning', 'Back to My Learning')}</Button>
           </Link>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Learning Material</CardTitle>
+          <CardTitle>{t('course.learningMaterial', 'Learning Material')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">Your Progress</div>
+              <div className="text-sm font-medium">{t('student.progress.label', 'Your Progress')}</div>
               <div className="text-sm text-gray-600">{(prog?.progress ?? 0)}%</div>
             </div>
             <ProgressBar value={prog?.progress ?? 0} />
@@ -86,7 +88,7 @@ export default function StudentCourseView() {
               {data.youtube_url && (
                 <div className="mt-2 text-sm">
                   <a className="text-blue-600 hover:underline" href={data.youtube_url} target="_blank" rel="noreferrer noopener">
-                    Watch on YouTube
+                    {t('course.watchOnYouTube', 'Watch on YouTube')}
                   </a>
                 </div>
               )}
@@ -95,12 +97,12 @@ export default function StudentCourseView() {
           {data.learning_material ? (
             <div className="prose max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.learning_material) }} />
           ) : (
-            <p className="text-muted-foreground">No learning material added yet.</p>
+            <p className="text-muted-foreground">{t('course.noLearningMaterial', 'No learning material added yet.')}</p>
           )}
 
           {/* Quiz */}
           <div ref={quizRef} className="space-y-2">
-            <div className="text-sm font-medium">Course Quiz</div>
+            <div className="text-sm font-medium">{t('course.quiz', 'Quiz')}</div>
             <QuizRunner courseId={id} />
           </div>
         </CardContent>

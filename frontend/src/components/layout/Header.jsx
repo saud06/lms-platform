@@ -4,6 +4,7 @@ import { Bell, Search, LogOut } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../../contexts/LanguageContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +17,11 @@ import {
 export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { language, setLanguage, t } = useLanguage()
   const [term, setTerm] = useState('')
   const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Welcome to the LMS!', href: '/dashboard', read: false },
-    { id: 2, text: 'New quiz attempts are available to review.', href: '/instructor/quizzes', read: false },
+    { id: 1, key: 'notifications.items.welcome', fallback: 'Welcome to the LMS!', href: '/dashboard', read: false },
+    { id: 2, key: 'notifications.items.newQuiz', fallback: 'New quiz attempts are available to review.', href: '/instructor/quizzes', read: false },
   ])
 
   const handleLogout = () => {
@@ -45,6 +47,29 @@ export default function Header() {
     if (n.href) navigate(n.href)
   }
 
+  const FlagUS = () => (
+    <svg width="16" height="12" viewBox="0 0 19 10" aria-hidden>
+      <rect width="19" height="10" fill="#b22234"/>
+      <g fill="#fff">
+        <rect y="1" width="19" height="1"/>
+        <rect y="3" width="19" height="1"/>
+        <rect y="5" width="19" height="1"/>
+        <rect y="7" width="19" height="1"/>
+        <rect y="9" width="19" height="1"/>
+      </g>
+      <rect width="8" height="6" fill="#3c3b6e"/>
+    </svg>
+  )
+  const FlagDE = () => (
+    <svg width="16" height="12" viewBox="0 0 3 2" aria-hidden>
+      <rect width="3" height="2" fill="#000"/>
+      <rect y="0.666" width="3" height="0.667" fill="#dd0000"/>
+      <rect y="1.333" width="3" height="0.667" fill="#ffce00"/>
+    </svg>
+  )
+  const CurrentFlag = language === 'de' ? FlagDE : FlagUS
+  const currentLangLabel = language === 'de' ? t('header.german','Deutsch (EUR)') : t('header.english','English (USD)')
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -53,7 +78,7 @@ export default function Header() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
-              placeholder="Search..."
+              placeholder={t('search.placeholder','Search...')}
               className="pl-10 w-64"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
@@ -63,6 +88,26 @@ export default function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <CurrentFlag />
+                <span className="text-sm">{currentLangLabel}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel>{t('header.language','Language')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setLanguage('en')}>
+                <span className="mr-2 inline-flex"><FlagUS /></span> {t('header.english','English (USD)')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLanguage('de')}>
+                <span className="mr-2 inline-flex"><FlagDE /></span> {t('header.german','Deutsch (EUR)')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="relative">
@@ -76,16 +121,16 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                <button className="text-xs text-blue-600 hover:underline" onClick={markAllRead}>Mark all read</button>
+                <span>{t('notifications.title','Notifications')}</span>
+                <button className="text-xs text-blue-600 hover:underline" onClick={markAllRead}>{t('notifications.markAllRead','Mark all read')}</button>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {notifications.length === 0 && (
-                <div className="p-3 text-xs text-muted-foreground">No notifications</div>
+                <div className="p-3 text-xs text-muted-foreground">{t('notifications.empty','No notifications')}</div>
               )}
               {notifications.map(n => (
                 <DropdownMenuItem key={n.id} onClick={() => onClickItem(n)} className={!n.read ? 'bg-blue-50/60' : ''}>
-                  <span className="text-sm">{n.text}</span>
+                  <span className="text-sm">{t(n.key, n.fallback)}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -104,7 +149,7 @@ export default function Header() {
 
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {t('header.logout','Logout')}
           </Button>
         </div>
       </div>
