@@ -31,6 +31,7 @@ import StudentDashboard from './pages/student/StudentDashboard'
 import StudentQuizzes from './pages/student/StudentQuizzes'
 import StudentCourses from './pages/student/StudentCourses'
 import StudentCourseView from './pages/student/StudentCourseView'
+import LandingPage from './pages/LandingPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,41 +49,42 @@ function App() {
         <Router>
           <Routes>
             {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthLayout />}>
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
             </Route>
 
-            {/* Protected Routes */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<DashboardPage />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              
+            {/* Protected Layout Route (no path) */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              {/* Dashboard */}
+              <Route path="/dashboard" element={<DashboardPage />} />
+
               {/* Admin Routes */}
-              <Route path="admin/dashboard" element={<AdminDashboard />} />
-              <Route path="admin/quizzes" element={<AdminQuizzes />} />
-              <Route path="admin/users" element={<ManageUsers />} />
-              <Route path="admin/courses" element={<ManageCourses />} />
-              <Route path="admin/courses/:id" element={<AdminCoursePreview />} />
-              <Route path="admin/settings" element={<AdminSettings />} />
-              
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/quizzes" element={<AdminQuizzes />} />
+              <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/courses" element={<ManageCourses />} />
+              <Route path="/admin/courses/:id" element={<AdminCoursePreview />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+
               {/* Instructor Routes */}
-              <Route path="instructor/dashboard" element={<InstructorDashboard />} />
-              <Route path="instructor/quizzes" element={<InstructorQuizzes />} />
-              <Route path="instructor/courses" element={<InstructorCourses />} />
-              <Route path="instructor/courses/create" element={<InstructorCreateCourse />} />
-              <Route path="instructor/students" element={<InstructorStudents />} />
-              <Route path="instructor/courses/:id" element={<InstructorCourseView />} />
-              <Route path="instructor/courses/:id/edit" element={<InstructorEditCourse />} />
-              
+              <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+              <Route path="/instructor/quizzes" element={<InstructorQuizzes />} />
+              <Route path="/instructor/courses" element={<InstructorCourses />} />
+              <Route path="/instructor/courses/create" element={<InstructorCreateCourse />} />
+              <Route path="/instructor/students" element={<InstructorStudents />} />
+              <Route path="/instructor/courses/:id" element={<InstructorCourseView />} />
+              <Route path="/instructor/courses/:id/edit" element={<InstructorEditCourse />} />
+
               {/* Student Routes */}
-              <Route path="student/dashboard" element={<StudentDashboard />} />
-              <Route path="quizzes" element={<StudentQuizzes />} />
-              <Route path="courses" element={<StudentCourses />} />
-              <Route path="courses/:id" element={<StudentCourseView />} />
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
+              <Route path="/quizzes" element={<StudentQuizzes />} />
+              <Route path="/courses" element={<StudentCourses />} />
+              <Route path="/courses/:id" element={<StudentCourseView />} />
             </Route>
 
-            {/* Redirect */}
+            {/* Redirect unknowns to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

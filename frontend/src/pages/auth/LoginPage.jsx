@@ -37,7 +37,7 @@ export default function LoginPage() {
         title: 'Success',
         description: 'Logged in successfully',
       })
-      navigate('/')
+      navigate('/dashboard')
     } catch (error) {
       toast({
         title: 'Error',
