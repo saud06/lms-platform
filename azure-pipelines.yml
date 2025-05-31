@@ -8,8 +8,8 @@ variables:
   phpVersion: '8.2'
   nodeVersion: '18.x'
   # Fill these once you create the Azure service connection and resources
-  azureSubscription: 'YOUR_AZURE_SERVICE_CONNECTION' # Azure RM service connection name
-  backendAppServiceName: 'YOUR_BACKEND_APP_SERVICE_NAME' # e.g., lms-backend-prod
+  azureSubscription: '$(azureSubscription)' # Azure RM service connection name
+  backendAppServiceName: '$(backendAppServiceName)' # e.g., lms-backend-prod
   # If you deploy frontend to Azure Static Web Apps, set SWA_DEPLOYMENT_TOKEN as a secret variable
 
 stages:
