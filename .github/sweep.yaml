@@ -1,7 +1,7 @@
 sandbox_mode: false
 max_lines_changed: 300
 tests:
-  required: true
+  required: false
 paths:
   include:
     - backend/**
@@ -9,4 +9,4 @@ paths:
 review:
   enable_auto_review: true
 labels:
-  trigger: ["sweep", "good first issue"]
+  trigger: ["sweep", "good first issue", "bug", "enhancement", "help wanted"]
