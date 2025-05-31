@@ -1,0 +1,12 @@
+sandbox_mode: false
+max_lines_changed: 300
+tests:
+  required: true
+paths:
+  include:
+    - backend/**
+    - frontend/**
+review:
+  enable_auto_review: true
+labels:
+  trigger: ["sweep", "good first issue"]

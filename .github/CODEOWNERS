@@ -1,0 +1,6 @@
+# Set default code owners
+* @your-github-username
+
+# Example granular ownership
+/backend/ @your-github-username
+/frontend/ @your-github-username

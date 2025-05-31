@@ -7,6 +7,10 @@ trigger:
 variables:
   phpVersion: '8.2'
   nodeVersion: '18.x'
+  # Fill these once you create the Azure service connection and resources
+  azureSubscription: 'YOUR_AZURE_SERVICE_CONNECTION' # Azure RM service connection name
+  backendAppServiceName: 'YOUR_BACKEND_APP_SERVICE_NAME' # e.g., lms-backend-prod
+  # If you deploy frontend to Azure Static Web Apps, set SWA_DEPLOYMENT_TOKEN as a secret variable
 
 stages:
 - stage: CI
@@ -16,16 +20,25 @@ stages:
     displayName: 'Backend - Laravel'
     pool:
       vmImage: 'ubuntu-latest'
+    container: ghcr.io/shivammathur/php:8.2
     steps:
-    - task: UsePhpVersion@0
+    # Using PHP 8.2 via container; no marketplace task needed
+
+    - task: Cache@2
       inputs:
-        versionSpec: $(phpVersion)
-      displayName: 'Use PHP $(phpVersion)'
+        key: 'composer | "$(Agent.OS)" | backend/composer.lock'
+        restoreKeys: 'composer | "$(Agent.OS)"'
+        path: 'backend/vendor'
+      displayName: 'Cache Composer vendor'
 
     - script: |
         cd backend
-        curl -sS https://getcomposer.org/installer | php
-        php composer.phar install --no-interaction --prefer-dist
+        if command -v composer >/dev/null 2>&1; then
+          composer install --no-interaction --prefer-dist
+        else
+          curl -sS https://getcomposer.org/installer | php
+          php composer.phar install --no-interaction --prefer-dist
+        fi
       displayName: 'Install Composer dependencies'
 
     - script: |
@@ -45,6 +58,26 @@ stages:
         if [ -f vendor/bin/phpunit ]; then vendor/bin/phpunit --testdox || php artisan test || true; else php artisan test || true; fi
       displayName: 'Run backend tests (if present)'
 
+    - script: |
+        cd backend
+        if [ -f vendor/bin/pint ]; then vendor/bin/pint --test || true; else echo "Pint not installed"; fi
+      displayName: 'Run Pint (code style)'
+
+    - script: |
+        cd backend
+        if ! command -v zip >/dev/null 2>&1; then
+          echo "zip not found; attempting install"
+          (apt-get update && apt-get install -y zip) || true
+        fi
+        zip -r ../backend_artifact.zip . -x "*.git*" "storage/logs/*"
+      displayName: 'Package backend (zip)'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'backend_artifact.zip'
+        ArtifactName: 'backend_zip'
+        publishLocation: 'Container'
+
   - job: Frontend
     displayName: 'Frontend - React'
     pool:
@@ -55,6 +88,13 @@ stages:
         versionSpec: $(nodeVersion)
       displayName: 'Use Node.js $(nodeVersion)'
 
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+        restoreKeys: 'npm | "$(Agent.OS)"'
+        path: 'frontend/node_modules'
+      displayName: 'Cache npm (node_modules)'
+
     - script: |
         cd frontend
         npm ci || npm install
@@ -64,3 +104,54 @@ stages:
         cd frontend
         npm run build
       displayName: 'Build frontend'
+
+    - script: |
+        cd frontend
+        npm run lint || echo "No lint script defined"
+      displayName: 'Run frontend lint (if configured)'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'frontend/dist'
+        ArtifactName: 'frontend_dist'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: CI
+  condition: and(succeeded(), ne(variables['azureSubscription'], 'YOUR_AZURE_SERVICE_CONNECTION'), ne(variables['backendAppServiceName'], 'YOUR_BACKEND_APP_SERVICE_NAME'))
+  jobs:
+  - deployment: BackendDeploy
+    displayName: 'Deploy Backend to Azure App Service'
+    environment: 'prod'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: backend_zip
+          - task: AzureWebApp@1
+            displayName: 'Deploy backend zip to App Service'
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              appName: '$(backendAppServiceName)'
+              package: '$(Pipeline.Workspace)/backend_zip/backend_artifact.zip'
+          # Optionally run migrations via a startup script or SSH if your App Service supports it
+          # - task: AzureCLI@2
+          #   inputs:
+          #     azureSubscription: '$(azureSubscription)'
+          #     scriptType: bash
+          #     scriptLocation: inlineScript
+          #     inlineScript: |
+          #       echo "Run php artisan migrate --force on the server (configure as needed)"
+
+  - job: FrontendDeploy
+    displayName: 'Deploy Frontend to Azure Static Web Apps'
+    condition: and(succeeded(), ne(variables['SWA_DEPLOYMENT_TOKEN'], ''))
+    steps:
+    - task: AzureStaticWebApp@0
+      inputs:
+        app_location: 'frontend'
+        output_location: 'dist'
+        skip_app_build: true
+        azure_static_web_apps_api_token: '$(SWA_DEPLOYMENT_TOKEN)'
