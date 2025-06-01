@@ -155,15 +155,13 @@ Trigger: pushes to `main`.
 
 ## 📸 Screenshots
 
-> Place images at `docs/landing.png` and `docs/admin-dashboard.png` in the repo.
-
 **Landing Page**
 
-![Landing](docs/landing.png)
+![Landing](docs/landing.jpg)
 
 **Admin Dashboard**
 
-![Admin Dashboard](docs/admin-dashboard.png)
+![Admin Dashboard](docs/dashboard.PNG)
 
 ---
 
