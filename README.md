@@ -153,6 +153,20 @@ Trigger: pushes to `main`.
 
 ---
 
+## 📸 Screenshots
+
+> Place images at `docs/landing.png` and `docs/admin-dashboard.png` in the repo.
+
+**Landing Page**
+
+![Landing](docs/landing.png)
+
+**Admin Dashboard**
+
+![Admin Dashboard](docs/admin-dashboard.png)
+
+---
+
 ## 💡 Why I Built This
 
 > As a Master's student in Web & Data Science with 2.5+ years in software development, I wanted a clean, production-like template that highlights **web engineering fundamentals**: API design, frontend integration, and CI, without over-engineering.
