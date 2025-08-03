@@ -1,0 +1,302 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@source "../index.html";
+@source "./**/*.{js,jsx,ts,tsx}";
+
+@layer base {
+  :root {
+    --background: 243 244 246; /* Light theme - gray-100 */
+    --foreground: 17 24 39; /* Light theme - gray-900 */
+    --card: 255 255 255; /* Light theme - white */
+    --card-foreground: 17 24 39; /* Light theme - gray-900 */
+    --popover: 255 255 255;
+    --popover-foreground: 17 24 39;
+    --primary: 59 130 246; /* blue-500 */
+    --primary-foreground: 255 255 255;
+    --secondary: 243 244 246;
+    --secondary-foreground: 17 24 39;
+    --muted: 243 244 246;
+    --muted-foreground: 107 114 128;
+    --accent: 243 244 246;
+    --accent-foreground: 17 24 39;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 229 231 235;
+    --input: 229 231 235;
+    --ring: 59 130 246;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 17 24 39; /* Dark theme - gray-900 */
+    --foreground: 255 255 255; /* Dark theme - white */
+    --card: 31 41 55; /* Dark theme - gray-800 */
+    --card-foreground: 255 255 255; /* Dark theme - white */
+    --popover: 31 41 55;
+    --popover-foreground: 255 255 255;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+    --secondary: 55 65 81;
+    --secondary-foreground: 255 255 255;
+    --muted: 55 65 81;
+    --muted-foreground: 156 163 175;
+    --accent: 55 65 81;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 55 65 81;
+    --input: 55 65 81;
+    --ring: 59 130 246;
+  }
+}
+
+/* Tailwind v4 theme tokens mapping to CSS variables */
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-ring-offset: hsl(var(--background));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  /* Force light theme as default */
+  body {
+    background-color: rgb(243, 244, 246) !important; /* gray-100 */
+    color: rgb(17, 24, 39) !important; /* gray-900 */
+  }
+  
+  /* Force dark theme when dark class is present */
+  html.dark body {
+    background-color: rgb(17, 24, 39) !important; /* gray-900 */
+    color: rgb(255, 255, 255) !important; /* white */
+  }
+  
+  /* Force card backgrounds */
+  .bg-card, [class*="bg-card"] {
+    background-color: rgb(255, 255, 255) !important; /* white */
+  }
+  
+  html.dark .bg-card, html.dark [class*="bg-card"] {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 */
+  }
+  
+  /* Force main layout backgrounds */
+  .bg-gray-100 {
+    background-color: rgb(243, 244, 246) !important; /* gray-100 */
+  }
+  
+  html.dark .bg-gray-100 {
+    background-color: rgb(17, 24, 39) !important; /* gray-900 */
+  }
+  
+  /* Force white backgrounds */
+  .bg-white {
+    background-color: rgb(255, 255, 255) !important; /* white */
+  }
+  
+  html.dark .bg-white {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 */
+  }
+  
+  /* Force text colors */
+  .text-gray-900 {
+    color: rgb(17, 24, 39) !important; /* gray-900 */
+  }
+  
+  html.dark .text-gray-900 {
+    color: rgb(255, 255, 255) !important; /* white */
+  }
+  
+  .text-gray-600 {
+    color: rgb(75, 85, 99) !important; /* gray-600 */
+  }
+  
+  html.dark .text-gray-600 {
+    color: rgb(209, 213, 219) !important; /* gray-300 */
+  }
+  
+  /* Fix input focus states */
+  input:focus, .focus-visible\:ring-2:focus {
+    border-color: rgb(59, 130, 246) !important; /* blue-500 */
+    box-shadow: 0 0 0 2px rgb(59, 130, 246, 0.2) !important; /* blue-500 with opacity */
+  }
+  
+  html.dark input:focus, html.dark .focus-visible\:ring-2:focus {
+    border-color: rgb(59, 130, 246) !important; /* blue-500 */
+    box-shadow: 0 0 0 2px rgb(59, 130, 246, 0.2) !important; /* blue-500 with opacity */
+  }
+  
+  /* Fix hover states for buttons and links */
+  .hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover {
+    background-color: rgb(249, 250, 251) !important; /* gray-50 */
+  }
+  
+  html.dark .hover\:bg-gray-50:hover, html.dark .hover\:bg-gray-100:hover {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  .hover\:bg-gray-700:hover {
+    background-color: rgb(249, 250, 251) !important; /* gray-50 in light theme */
+  }
+  
+  html.dark .hover\:bg-gray-700:hover {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 in dark theme */
+  }
+  
+  /* Fix table row hover states */
+  .hover\:bg-gray-800:hover, tr:hover {
+    background-color: rgb(249, 250, 251) !important; /* gray-50 in light theme */
+  }
+  
+  html.dark .hover\:bg-gray-800:hover, html.dark tr:hover {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 in dark theme */
+  }
+  
+  /* Fix active/selected states */
+  .bg-gray-200 {
+    background-color: rgb(229, 231, 235) !important; /* gray-200 */
+  }
+  
+  html.dark .bg-gray-200 {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  .bg-gray-700 {
+    background-color: rgb(229, 231, 235) !important; /* gray-200 in light theme */
+  }
+  
+  html.dark .bg-gray-700 {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 in dark theme */
+  }
+  
+  /* Fix dropdown and navigation hover states */
+  .bg-gray-800 {
+    background-color: rgb(229, 231, 235) !important; /* gray-200 in light theme */
+  }
+  
+  html.dark .bg-gray-800 {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 in dark theme */
+  }
+  
+  /* Fix specific hover classes that might be causing issues */
+  .hover\:bg-gray-800:hover {
+    background-color: rgb(249, 250, 251) !important; /* gray-50 in light theme */
+  }
+  
+  html.dark .hover\:bg-gray-800:hover {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 in dark theme */
+  }
+  
+  /* Fix button ghost variant hovers */
+  button:hover, .hover\:bg-transparent:hover {
+    background-color: rgb(249, 250, 251) !important; /* gray-50 in light theme */
+  }
+  
+  html.dark button:hover, html.dark .hover\:bg-transparent:hover {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 in dark theme */
+  }
+  
+  /* Fix dark theme specific issues */
+  
+  /* Fix yellow/orange borders in dark theme */
+  html.dark .border-yellow-400, html.dark .border-orange-400, html.dark .border-amber-400 {
+    border-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  /* Fix any yellow/orange top borders */
+  html.dark .border-t-yellow-400, html.dark .border-t-orange-400, html.dark .border-t-amber-400 {
+    border-top-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  /* Fix light footer sections in dark theme */
+  html.dark footer, html.dark .bg-gray-50 {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 */
+    color: rgb(255, 255, 255) !important; /* white */
+  }
+  
+  /* Fix very light gray text that's hard to read in dark theme */
+  html.dark .text-gray-400 {
+    color: rgb(156, 163, 175) !important; /* gray-400 - more readable */
+  }
+  
+  html.dark .text-gray-500 {
+    color: rgb(209, 213, 219) !important; /* gray-300 - more readable */
+  }
+  
+  /* Note: .bg-gray-100 already handled above, this is for .bg-gray-50 only */
+  html.dark .bg-gray-50 {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 */
+  }
+  
+  /* Fix border colors in dark theme */
+  html.dark .border-gray-200 {
+    border-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  html.dark .border-gray-300 {
+    border-color: rgb(75, 85, 99) !important; /* gray-600 */
+  }
+  
+  /* Fix any divider lines or separators in dark theme */
+  html.dark hr, html.dark .border-t, html.dark .border-b {
+    border-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  /* Fix any remaining yellow/amber/orange elements in dark theme */
+  html.dark .bg-yellow-400, html.dark .bg-orange-400, html.dark .bg-amber-400 {
+    background-color: rgb(55, 65, 81) !important; /* gray-700 */
+  }
+  
+  /* Fix text colors that might be too light in dark theme */
+  html.dark .text-gray-300 {
+    color: rgb(209, 213, 219) !important; /* gray-300 - good contrast */
+  }
+  
+  html.dark .text-gray-200 {
+    color: rgb(229, 231, 235) !important; /* gray-200 - good contrast */
+  }
+  
+  /* Ensure buttons and interactive elements have proper contrast in dark theme */
+  html.dark button, html.dark .btn {
+    color: rgb(255, 255, 255) !important; /* white text */
+  }
+  
+  /* Fix any modal or dialog backgrounds in dark theme */
+  html.dark .modal, html.dark .dialog, html.dark [role="dialog"] {
+    background-color: rgb(31, 41, 55) !important; /* gray-800 */
+    color: rgb(255, 255, 255) !important; /* white */
+  }
+}
+
+

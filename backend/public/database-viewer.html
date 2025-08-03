@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS Platform - Database Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab.active {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .table-card {
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .table-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table-name {
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+        
+        .table-count {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .data-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .query-section {
+            margin-top: 20px;
+        }
+        
+        .query-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .insert-form {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .form-row label {
+            min-width: 120px;
+            font-weight: 600;
+        }
+        
+        .form-row input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #f0fdf4;
+            color: #16a34a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .back-btn {
+            background: #6b7280;
+            margin-right: 10px;
+        }
+        
+        .back-btn:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ LMS Platform Database Viewer</h1>
+            <p>View and explore your MySQL database tables and data</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('tables')">📋 Tables</button>
+            <button class="tab" onclick="showTab('query')">🔍 Query</button>
+        </div>
+        
+        <div id="tables-tab" class="content">
+            <h2>Database Tables</h2>
+            <div id="tables-loading" class="loading">Loading tables...</div>
+            <div id="tables-list" class="tables-grid hidden"></div>
+        </div>
+        
+        <div id="query-tab" class="content hidden">
+            <h2>SQL Query</h2>
+            <div class="query-section">
+                <textarea id="query-input" class="query-input" placeholder="Enter your SELECT query here...
+Example: SELECT * FROM users LIMIT 10"></textarea>
+                <button class="btn" onclick="executeQuery()">Execute Query</button>
+                <div id="query-result"></div>
+            </div>
+        </div>
+        
+        <div id="table-view" class="content hidden">
+            <button class="btn back-btn" onclick="showTab('tables')">← Back to Tables</button>
+            <button class="btn" onclick="showStructure()">Show Structure</button>
+            <div id="table-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let currentTable = null;
+        
+        // Load tables on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTables();
+        });
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+        
+        async function loadTables() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/database/tables`);
+                const tables = await response.json();
+                
+                document.getElementById('tables-loading').classList.add('hidden');
+                const tablesList = document.getElementById('tables-list');
+                tablesList.classList.remove('hidden');
+                
+                tablesList.innerHTML = tables.map(table => `
+                    <div class="table-card" onclick="viewTable('${table.name}')">
+                        <div class="table-name">${table.name}</div>
+                        <div class="table-count">${table.count} rows</div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                document.getElementById('tables-loading').innerHTML = `
+                    <div class="error">Error loading tables: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function viewTable(tableName) {
+            currentTable = tableName;
+            
+            // Hide other tabs and show table view
+            document.querySelectorAll('.content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('table-view').classList.remove('hidden');
+            
+            document.getElementById('table-content').innerHTML = '<div class="loading">Loading table data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/database/table/${tableName}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                let html = `<h2>📋 Table: ${tableName}</h2>`;
+                html += `<p>Total rows: ${data.total_count} (showing first 100)</p>`;
+                
+                if (data.data.length > 0) {
+                    html += '<table class="data-table">';
+                    html += '<thead><tr>';
+                    data.columns.forEach(col => {
+                        html += `<th>${col}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    
+                    data.data.forEach(row => {
+                        html += '<tr>';
+                        data.columns.forEach(col => {
+                            let value = row[col];
+                            if (value === null) value = '<em>NULL</em>';
+                            if (typeof value === 'string' && value.length > 50) {
+                                value = value.substring(0, 50) + '...';
+                            }
+                            html += `<td>${value}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                } else {
+                    html += '<p>No data found in this table.</p>';
+                }
+                
+                document.getElementById('table-content').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('table-content').innerHTML = `
+                    <div class="error">Error loading table: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function showStructure() {
+            if (!currentTable) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/database/structure/${currentTable}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                let html = `<h2>🏗️ Structure: ${currentTable}</h2>`;
+                html += '<table class="data-table">';
+                html += '<thead><tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr></thead><tbody>';
+                
+                data.structure.forEach(col => {
+                    html += `<tr>
+                        <td><strong>${col.Field}</strong></td>
+                        <td>${col.Type}</td>
+                        <td>${col.Null}</td>
+                        <td>${col.Key}</td>
+                        <td>${col.Default || '<em>NULL</em>'}</td>
+                        <td>${col.Extra}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('table-content').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('table-content').innerHTML = `
+                    <div class="error">Error loading structure: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function executeQuery() {
+            const query = document.getElementById('query-input').value.trim();
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('query-result');
+            resultDiv.innerHTML = '<div class="loading">Executing query...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/database/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                let html = `<div class="success">Query executed successfully! Found ${data.count} results.</div>`;
+                
+                if (data.results.length > 0) {
+                    const columns = Object.keys(data.results[0]);
+                    html += '<table class="data-table">';
+                    html += '<thead><tr>';
+                    columns.forEach(col => {
+                        html += `<th>${col}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    
+                    data.results.forEach(row => {
+                        html += '<tr>';
+                        columns.forEach(col => {
+                            let value = row[col];
+                            if (value === null) value = '<em>NULL</em>';
+                            html += `<td>${value}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                } else {
+                    html += '<p>No results returned.</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
