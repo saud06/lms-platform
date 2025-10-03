@@ -1,9 +1,9 @@
-# LMS Platform Deployment Guide: Render + Railway MySQL
+# LMS Platform Deployment Guide: Render Docker + Railway MySQL
 
 ## Architecture Overview
 - **Database**: Railway MySQL (cloud database)
-- **Application**: Render (full LMS platform hosting)
-- **Connection**: Render ↔ Railway MySQL
+- **Application**: Render Docker (full LMS platform hosting)
+- **Connection**: Render Docker ↔ Railway MySQL
 
 ## Step 1: Railway MySQL Connection Details
 
@@ -20,23 +20,31 @@
 
 **Note**: The actual values are automatically provided by Railway. You'll get the real connection details when you access the MySQL service variables tab.
 
-## Step 2: Deploy to Render
+## Step 2: Deploy to Render with Docker
 
-### Option A: Deploy from GitHub
+### Option A: Deploy from GitHub (Recommended)
 1. Push your code to GitHub (already done)
 2. Go to [Render Dashboard](https://dashboard.render.com/)
 3. Click **New** → **Web Service**
 4. Connect your GitHub repository: `https://github.com/saud06/lms-platform`
 5. Configure the service:
    - **Name**: `lms-platform`
-   - **Environment**: `PHP`
-   - **Build Command**: `./build.sh`
-   - **Start Command**: `./start.sh`
+   - **Environment**: `Docker`
+   - **Dockerfile Path**: `./Dockerfile`
    - **Plan**: Free (or paid for better performance)
 
-### Option B: Deploy with render.yaml
+### Option B: Deploy with render.yaml (Automatic)
 1. Push the `render.yaml` file to your GitHub repository
-2. Render will automatically detect and use the configuration
+2. Render will automatically detect Docker configuration and deploy
+
+### Docker Build Process:
+The Dockerfile will automatically:
+- ✅ Install PHP 8.2 with Apache
+- ✅ Install Node.js and build frontend assets
+- ✅ Install Laravel dependencies
+- ✅ Set up proper permissions
+- ✅ Configure Apache for production
+- ✅ Run migrations and seeding on startup
 
 ## Step 3: Set Environment Variables on Render
 

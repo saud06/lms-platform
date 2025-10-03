@@ -1,9 +1,8 @@
 services:
   - type: web
     name: lms-platform
-    env: php
-    buildCommand: ./build.sh
-    startCommand: ./start.sh
+    env: docker
+    dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: APP_NAME
@@ -13,21 +12,21 @@ services:
       - key: APP_DEBUG
         value: false
       - key: APP_KEY
-        generateValue: true
+        value: base64:9vJiaZea2Brfxf5x6fO90FUISkwkogCgXhyIPp9ZeTM=
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        sync: false  # Will be set manually with Railway MySQL details
+        sync: false  # Set manually with Railway MySQL host
       - key: DB_PORT
-        sync: false  # Will be set manually with Railway MySQL details
+        sync: false  # Set manually with Railway MySQL port
       - key: DB_DATABASE
-        sync: false  # Will be set manually with Railway MySQL details
+        sync: false  # Set manually with Railway MySQL database name
       - key: DB_USERNAME
-        sync: false  # Will be set manually with Railway MySQL details
+        sync: false  # Set manually with Railway MySQL username
       - key: DB_PASSWORD
-        sync: false  # Will be set manually with Railway MySQL details
+        sync: false  # Set manually with Railway MySQL password
       - key: JWT_SECRET
-        generateValue: true
+        value: VEBGAa6zfUiRz9CBKM9NvK1G5keUW65W4vxfNaQVRY0=
       - key: LOG_CHANNEL
         value: stack
       - key: CACHE_DRIVER

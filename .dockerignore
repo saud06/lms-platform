@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+gitignore
+
+# Documentation
+README.md
+*.md
+RENDER_DEPLOYMENT.md
+
+# Environment files (will be set by Render)
+.env
+.env.*
+backend/.env*
+
+# Dependencies (will be installed in container)
+backend/vendor/
+frontend/node_modules/
+frontend/dist/
+
+# Cache and logs
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build artifacts
+frontend/dist-ssr/
+frontend/.vite/
+
+# Scripts (not needed in container since they're in Dockerfile)
+build.sh
+start.sh
