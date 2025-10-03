@@ -38,7 +38,8 @@ RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html && \
     mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache resources/views && \
     chown -R www-data:www-data storage bootstrap/cache resources && \
-    chmod -R 775 storage bootstrap/cache resources
+    chmod -R 775 storage bootstrap/cache resources && \
+    chmod -R 777 storage/logs storage/framework
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
@@ -48,8 +49,11 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "🚀 Starting LMS Platform on Render..."' >> /start.sh && \
     echo 'cd /var/www/html' >> /start.sh && \
     echo '' >> /start.sh && \
-    echo '# Ensure views directory exists' >> /start.sh && \
-    echo 'mkdir -p resources/views storage/framework/views' >> /start.sh && \
+    echo '# Ensure directories exist and have correct permissions' >> /start.sh && \
+    echo 'mkdir -p resources/views storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache' >> /start.sh && \
+    echo 'chown -R www-data:www-data storage bootstrap/cache resources' >> /start.sh && \
+    echo 'chmod -R 775 storage bootstrap/cache resources' >> /start.sh && \
+    echo 'chmod -R 777 storage/logs storage/framework' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔑 Checking APP_KEY..."' >> /start.sh && \
     echo 'if [ -z "$APP_KEY" ]; then echo "❌ APP_KEY is not set!"; exit 1; fi' >> /start.sh && \
