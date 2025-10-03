@@ -13,7 +13,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+// Serve React frontend for all non-API routes
+Route::get('/{any}', function () {
+    return file_get_contents(public_path('index.html'));
+})->where('any', '^(?!api).*$');
+
+// API status endpoint
+Route::get('/api/status', function () {
     try {
         return response()->json([
             'Laravel' => app()->version(),

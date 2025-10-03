@@ -28,6 +28,8 @@ RUN cd /tmp/frontend && \
     npm run build && \
     mkdir -p /var/www/html/public/assets && \
     cp -r dist/* /var/www/html/public/ && \
+    ls -la /var/www/html/public/ && \
+    echo "Frontend files copied successfully" && \
     rm -rf /tmp/frontend
 
 # Install PHP dependencies
