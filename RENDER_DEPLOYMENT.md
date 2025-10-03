@@ -5,17 +5,20 @@
 - **Application**: Render (full LMS platform hosting)
 - **Connection**: Render ↔ Railway MySQL
 
-## Step 1: Get Railway MySQL Connection Details
+## Step 1: Railway MySQL Connection Details
 
-1. Go to your Railway project: https://railway.com/project/6f7cd480-3ab6-4513-aa8b-fb2a54cbc8d0
-2. Click on the **MySQL** service (not the backend service)
-3. Go to the **Variables** tab
-4. Copy these connection details:
-   - `MYSQLHOST` (Database Host)
-   - `MYSQLPORT` (Database Port, usually 3306)
-   - `MYSQLDATABASE` (Database Name)
-   - `MYSQLUSER` (Database Username)
-   - `MYSQLPASSWORD` (Database Password)
+✅ **Clean MySQL-only setup created!**
+
+**Railway Project**: https://railway.com/project/b874192a-4196-4373-a45f-b89ac98f0f76
+
+**Connection Details** (use these exact values in Render):
+- **DB_HOST**: `${MYSQLHOST}`
+- **DB_PORT**: `${MYSQLPORT}` 
+- **DB_DATABASE**: `${MYSQLDATABASE}`
+- **DB_USERNAME**: `${MYSQLUSER}`
+- **DB_PASSWORD**: `${MYSQLPASSWORD}`
+
+**Note**: The actual values are automatically provided by Railway. You'll get the real connection details when you access the MySQL service variables tab.
 
 ## Step 2: Deploy to Render
 
