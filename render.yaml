@@ -26,7 +26,7 @@ services:
       - key: DB_CONNECTION
         value: mysql
       - key: DATABASE_URL
-        value: mysql://root:yqZGCjLCsuPmeEzlaDxWmIEmHlLcujWJ@nozomi.proxy.rlwy.net:55229/railway
+        value: mysql://root:yqZGCjlCsuPmeEzlaDxWmIEmHllcujWJ@nozomi.proxy.rlwy.net:55229/railway
       - key: DB_HOST
         value: nozomi.proxy.rlwy.net
       - key: DB_PORT
@@ -36,7 +36,7 @@ services:
       - key: DB_USERNAME
         value: root
       - key: DB_PASSWORD
-        value: yqZGCjLCsuPmeEzlaDxWmIEmHlLcujWJ
+        value: yqZGCjlCsuPmeEzlaDxWmIEmHllcujWJ
       - key: JWT_SECRET
         value: VEBGAa6zfUiRz9CBKM9NvK1G5keUW65W4vxfNaQVRY0=
       - key: JWT_ALGO
