@@ -1,6 +1,12 @@
-# LMS Platform (Laravel + React + Azure DevOps)
+# LMS Platform (Laravel + React)
 
-A minimal portfolio-ready project showcasing a Laravel API backend, a lightweight React (Vite) frontend, and a simple Azure DevOps CI pipeline. No Docker. Minimal dependencies. Mostly JavaScript.
+A full-featured Learning Management System with Laravel API backend, React (Vite) frontend, and modern deployment architecture.
+
+## 🚀 Quick Deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/saud06/lms-platform)
+
+**Architecture**: Render Docker + Railway MySQL
  
 ![PHP](https://img.shields.io/badge/PHP-8.2-blue)
 ![Laravel](https://img.shields.io/badge/Laravel-10-red)

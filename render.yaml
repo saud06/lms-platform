@@ -1,9 +1,17 @@
+# Render Blueprint for LMS Platform
+# Deploy with: https://dashboard.render.com/blueprints
+
 services:
   - type: web
     name: lms-platform
-    env: docker
+    runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
+    region: oregon
+    branch: main
+    buildCommand: ""  # Handled by Dockerfile
+    startCommand: ""  # Handled by Dockerfile
+    healthCheckPath: /api/health
     envVars:
       - key: APP_NAME
         value: "LMS Platform"
@@ -11,6 +19,8 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+      - key: APP_URL
+        value: https://lms-platform.onrender.com
       - key: APP_KEY
         value: base64:9vJiaZea2Brfxf5x6fO90FUISkwkogCgXhyIPp9ZeTM=
       - key: DB_CONNECTION
@@ -18,7 +28,7 @@ services:
       - key: DB_HOST
         sync: false  # Set manually with Railway MySQL host
       - key: DB_PORT
-        sync: false  # Set manually with Railway MySQL port
+        sync: false  # Set manually with Railway MySQL port (usually 3306)
       - key: DB_DATABASE
         sync: false  # Set manually with Railway MySQL database name
       - key: DB_USERNAME
@@ -27,13 +37,37 @@ services:
         sync: false  # Set manually with Railway MySQL password
       - key: JWT_SECRET
         value: VEBGAa6zfUiRz9CBKM9NvK1G5keUW65W4vxfNaQVRY0=
+      - key: JWT_ALGO
+        value: HS256
       - key: LOG_CHANNEL
         value: stack
+      - key: LOG_LEVEL
+        value: debug
       - key: CACHE_DRIVER
         value: file
+      - key: FILESYSTEM_DISK
+        value: local
       - key: QUEUE_CONNECTION
         value: sync
       - key: SESSION_DRIVER
         value: file
       - key: SESSION_LIFETIME
         value: 120
+      - key: BROADCAST_DRIVER
+        value: log
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.mailtrap.io
+      - key: MAIL_PORT
+        value: 2525
+      - key: MAIL_USERNAME
+        value: null
+      - key: MAIL_PASSWORD
+        value: null
+      - key: MAIL_ENCRYPTION
+        value: null
+      - key: MAIL_FROM_ADDRESS
+        value: hello@lms-platform.com
+      - key: MAIL_FROM_NAME
+        value: "LMS Platform"
