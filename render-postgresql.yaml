@@ -1,4 +1,4 @@
-# Render Blueprint for LMS Platform
+# Render Blueprint for LMS Platform with PostgreSQL
 # Deploy with: https://dashboard.render.com/blueprints
 
 services:
@@ -24,19 +24,11 @@ services:
       - key: APP_KEY
         value: base64:9vJiaZea2Brfxf5x6fO90FUISkwkogCgXhyIPp9ZeTM=
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DATABASE_URL
-        value: mysql://root:yqZGCjLCsuPmeEzlaDxWmIEmHlLcujWJ@nozomi.proxy.rlwy.net:55229/railway
-      - key: DB_HOST
-        value: nozomi.proxy.rlwy.net
-      - key: DB_PORT
-        value: 55229
-      - key: DB_DATABASE
-        value: railway
-      - key: DB_USERNAME
-        value: root
-      - key: DB_PASSWORD
-        value: yqZGCjLCsuPmeEzlaDxWmIEmHlLcujWJ
+        fromDatabase:
+          name: lms-database
+          property: connectionString
       - key: JWT_SECRET
         value: VEBGAa6zfUiRz9CBKM9NvK1G5keUW65W4vxfNaQVRY0=
       - key: JWT_ALGO
@@ -73,3 +65,9 @@ services:
         value: hello@lms-platform.com
       - key: MAIL_FROM_NAME
         value: "LMS Platform"
+
+databases:
+  - name: lms-database
+    databaseName: lms_platform
+    user: lms_user
+    plan: free
