@@ -8,19 +8,32 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Course;
 use App\Models\Enrollment;
+
+// Health check endpoint for Railway
+Route::get('/health', function () {
+    try {
+        // Check database connection
+        DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'healthy',
+            'database' => 'connected',
+            'timestamp' => now()->toISOString()
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => 'unhealthy',
+            'database' => 'disconnected',
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toISOString()
+        ], 503);
+    }
+});
+
 use App\Models\Setting;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\QuizAttempt;
 use App\Models\QuizAnswer;
-
-// Health check endpoint
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'OK',
-        'timestamp' => now()->toIso8601String()
-    ]);
-});
 
 // Helper functions are defined in app/helpers.php
 

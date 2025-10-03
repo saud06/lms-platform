@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: lms-platform
+    env: php
+    buildCommand: ./build.sh
+    startCommand: ./start.sh
+    plan: free
+    envVars:
+      - key: APP_NAME
+        value: "LMS Platform"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false  # Will be set manually with Railway MySQL details
+      - key: DB_PORT
+        sync: false  # Will be set manually with Railway MySQL details
+      - key: DB_DATABASE
+        sync: false  # Will be set manually with Railway MySQL details
+      - key: DB_USERNAME
+        sync: false  # Will be set manually with Railway MySQL details
+      - key: DB_PASSWORD
+        sync: false  # Will be set manually with Railway MySQL details
+      - key: JWT_SECRET
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: stack
+      - key: CACHE_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: SESSION_DRIVER
+        value: file
+      - key: SESSION_LIFETIME
+        value: 120
