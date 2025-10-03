@@ -58,7 +58,8 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔍 Testing database connection..."' >> /start.sh && \
     echo 'echo "Host: $DB_HOST, Port: $DB_PORT, Database: $DB_DATABASE, User: $DB_USERNAME"' >> /start.sh && \
-    echo 'php -r "try { \$pdo = new PDO(\"mysql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE\", \"$DB_USERNAME\", \"$DB_PASSWORD\"); echo \"✅ Database connected successfully\\n\"; } catch(Exception \$e) { echo \"❌ Database connection failed: \" . \$e->getMessage() . \"\\n\"; }"' >> /start.sh && \
+    echo 'echo "Testing with: mysql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE"' >> /start.sh && \
+    echo 'php -r "try { \$pdo = new PDO(\"mysql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE\", \"$DB_USERNAME\", \"$DB_PASSWORD\"); echo \"✅ Database connected successfully\\n\"; } catch(Exception \$e) { echo \"❌ Database connection failed: \" . \$e->getMessage() . \"\\n\"; exit(1); }"' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🗄️ Running database migrations..."' >> /start.sh && \
     echo 'php artisan migrate --force || echo "Migration failed, continuing..."' >> /start.sh && \
@@ -74,7 +75,10 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'echo "🌐 Starting Apache server on port $PORT..."' >> /start.sh && \
     echo 'sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf' >> /start.sh && \
     echo 'sed -i "s/80/$PORT/g" /etc/apache2/ports.conf' >> /start.sh && \
-    echo 'echo "ServerName lms-platform.onrender.com" >> /etc/apache2/apache2.conf' >> /start.sh && \
+    echo 'echo "ServerName lms-platform-i2dl.onrender.com" >> /etc/apache2/apache2.conf' >> /start.sh && \
+    echo 'echo "Creating simple status page..."' >> /start.sh && \
+    echo 'echo "<?php echo \"LMS Platform is running on \" . date(\"Y-m-d H:i:s\"); ?>" > public/status.php' >> /start.sh && \
+    echo 'echo "✅ LMS Platform startup completed successfully"' >> /start.sh && \
     echo 'exec apache2-foreground' >> /start.sh && \
     chmod +x /start.sh
 
