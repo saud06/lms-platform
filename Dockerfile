@@ -57,7 +57,8 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo 'php artisan view:clear || echo "View clear failed"' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔍 Testing database connection..."' >> /start.sh && \
-    echo 'php artisan tinker --execute="try { DB::connection()->getPdo(); echo \"Database connected successfully\"; } catch(Exception \$e) { echo \"Database connection failed: \" . \$e->getMessage(); }"' >> /start.sh && \
+    echo 'echo "Host: $DB_HOST, Port: $DB_PORT, Database: $DB_DATABASE, User: $DB_USERNAME"' >> /start.sh && \
+    echo 'php -r "try { \$pdo = new PDO(\"mysql:host=\$DB_HOST;port=\$DB_PORT;dbname=\$DB_DATABASE\", \$DB_USERNAME, \$DB_PASSWORD); echo \"✅ Database connected successfully\n\"; } catch(Exception \$e) { echo \"❌ Database connection failed: \" . \$e->getMessage() . \"\n\"; }"' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🗄️ Running database migrations..."' >> /start.sh && \
     echo 'php artisan migrate --force || echo "Migration failed, continuing..."' >> /start.sh && \

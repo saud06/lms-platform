@@ -26,15 +26,15 @@ services:
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        sync: false  # Set manually with Railway MySQL host
+        value: nozomi.proxy.rlwy.net
       - key: DB_PORT
-        sync: false  # Set manually with Railway MySQL port (usually 3306)
+        value: 55229
       - key: DB_DATABASE
-        sync: false  # Set manually with Railway MySQL database name
+        value: railway
       - key: DB_USERNAME
-        sync: false  # Set manually with Railway MySQL username
+        value: root
       - key: DB_PASSWORD
-        sync: false  # Set manually with Railway MySQL password
+        value: yqZGCjLCsuPmeEzlaDxWmIEmHlLcujWJ
       - key: JWT_SECRET
         value: VEBGAa6zfUiRz9CBKM9NvK1G5keUW65W4vxfNaQVRY0=
       - key: JWT_ALGO
