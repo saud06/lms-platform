@@ -22,7 +22,7 @@ services:
       - key: APP_URL
         value: https://lms-platform-i2dl.onrender.com
       - key: APP_KEY
-        value: base64:9vJiaZea2Brfxf5x6fO90FUISkwkogCgXhyIPp9ZeTM=
+        value: base64:rCl9jjdYcWO6D/dEqAL60Z3YuvKGD/nnp/ni1v+lOCA=
       - key: DB_CONNECTION
         value: mysql
       - key: DATABASE_URL

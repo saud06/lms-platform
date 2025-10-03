@@ -51,6 +51,10 @@ RUN echo '#!/bin/bash' > /start.sh && \
     echo '# Ensure views directory exists' >> /start.sh && \
     echo 'mkdir -p resources/views storage/framework/views' >> /start.sh && \
     echo '' >> /start.sh && \
+    echo 'echo "🔑 Checking APP_KEY..."' >> /start.sh && \
+    echo 'if [ -z "$APP_KEY" ]; then echo "❌ APP_KEY is not set!"; exit 1; fi' >> /start.sh && \
+    echo 'echo "✅ APP_KEY is set: ${APP_KEY:0:20}..."' >> /start.sh && \
+    echo '' >> /start.sh && \
     echo 'echo "🧹 Clearing Laravel caches..."' >> /start.sh && \
     echo 'php artisan config:clear || echo "Config clear failed"' >> /start.sh && \
     echo 'php artisan route:clear || echo "Route clear failed"' >> /start.sh && \
